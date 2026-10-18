@@ -1,0 +1,682 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Data Dashboard Pro</title>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<style>
+:root {
+  --bg:#f3f6fb; --card:#fff; --ink:#172033;
+  --muted:#64748b; --line:#dfe6ef; --blue:#2458d3;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:Tahoma,Arial,sans-serif;
+}
+header {
+  background:linear-gradient(120deg,#102448,#2458d3);
+  color:white; padding:24px;
+}
+main { max-width:1400px; margin:auto; padding:18px; }
+h1,h2,h3 { margin-top:0; }
+.panel,.kpi,.chartbox {
+  background:var(--card); border:1px solid var(--line);
+  border-radius:14px; padding:16px; margin-bottom:16px;
+}
+button {
+  border:0; border-radius:8px; padding:10px 14px;
+  background:var(--blue); color:white; cursor:pointer;
+  margin:3px;
+}
+button.secondary { background:#e8eef8; color:#183153; }
+button.danger { background:#ffe8e8; color:#a12626; }
+input,select {
+  width:100%; padding:10px; border:1px solid #cbd5e1;
+  border-radius:8px; background:white; margin:4px 0 12px;
+}
+label { display:block; font-size:13px; font-weight:bold; }
+.grid,.charts,.settings {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+.kpis {
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px; margin-bottom:16px;
+}
+.kpi .value { font-size:26px; font-weight:bold; overflow-wrap:anywhere; }
+.kpi small,.muted { color:var(--muted); }
+.chart { height:300px; }
+.table-wrap { overflow:auto; max-height:480px; }
+table { border-collapse:collapse; width:100%; background:white; font-size:13px; }
+th,td { padding:9px; border-bottom:1px solid var(--line); text-align:right; }
+th { background:#edf2f8; position:sticky; top:0; }
+.hidden { display:none!important; }
+.modal {
+  position:fixed; inset:0; background:#0008; z-index:10;
+  display:flex; align-items:center; justify-content:center; padding:15px;
+}
+.modal-box {
+  background:white; padding:20px; border-radius:14px;
+  width:min(700px,100%); max-height:90vh; overflow:auto;
+}
+.modal-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+@media(max-width:700px) {
+  .grid,.charts,.settings { grid-template-columns:1fr; }
+  .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  main { padding:10px; }
+  .chart { height:250px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>Smart Data Dashboard Pro</h1>
+  <p>ارفع بياناتك وحللها وخصص الداشبورد بسهولة.</p>
+  <button class="secondary" onclick="loadSample()">تجربة بيانات مثال</button>
+  <button id="reportBtn" onclick="exportReport()" disabled>تصدير تقرير HTML</button>
+</header>
+
+<main>
+<section class="panel">
+  <h2>1. مصدر البيانات</h2>
+  <div class="grid">
+    <div>
+      <label>رفع ملف CSV</label>
+      <input type="file" id="csvFile" accept=".csv,text/csv">
+      <p class="muted" id="fileStatus">اختر ملفًا من جهازك.</p>
+    </div>
+    <div>
+      <label>رابط Google Sheets</label>
+      <input id="sheetUrl" type="url" placeholder="رابط الشيت">
+      <button onclick="loadSheet()">تحميل الشيت</button>
+      <p class="muted" id="sheetStatus">
+        يجب أن يكون الشيت متاحًا للعرض عبر الرابط.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div id="dashboard" class="hidden">
+<section class="panel">
+  <h2>2. البحث والفلاتر</h2>
+  <div class="grid">
+    <div>
+      <label>بحث في البيانات</label>
+      <input id="search" placeholder="اكتب كلمة للبحث">
+    </div>
+    <div>
+      <label>فلترة حسب عمود</label>
+      <select id="filterColumn"></select>
+    </div>
+    <div>
+      <label>قيمة الفلتر</label>
+      <select id="filterValue"></select>
+    </div>
+    <div>
+      <label>عدد النتائج</label>
+      <p id="recordCount">0</p>
+      <button class="secondary" onclick="clearFilters()">مسح الفلاتر</button>
+    </div>
+  </div>
+</section>
+
+<div class="kpis" id="kpis"></div>
+
+<section class="panel">
+  <h2>3. تخصيص الداشبورد</h2>
+  <div class="settings">
+    <div>
+      <label>عمود التصنيف</label>
+      <select id="dimension"></select>
+    </div>
+    <div>
+      <label>العمود الرقمي</label>
+      <select id="metric"></select>
+    </div>
+    <div>
+      <label>طريقة الحساب</label>
+      <select id="aggregation">
+        <option value="sum">المجموع</option>
+        <option value="avg">المتوسط</option>
+        <option value="count">عدد السجلات</option>
+      </select>
+    </div>
+    <div>
+      <label>نوع الرسم</label>
+      <select id="chartType">
+        <option value="bar">أعمدة</option>
+        <option value="line">خطي</option>
+        <option value="pie">دائري</option>
+        <option value="doughnut">دائري مجوف</option>
+      </select>
+    </div>
+    <div>
+      <label>المؤشر الأول</label><select id="kpi1"></select>
+    </div>
+    <div>
+      <label>المؤشر الثاني</label><select id="kpi2"></select>
+    </div>
+    <div>
+      <label>المؤشر الثالث</label><select id="kpi3"></select>
+    </div>
+    <div>
+      <label>المؤشر الرابع</label><select id="kpi4"></select>
+    </div>
+    <div>
+      <label>عنوان الرسم</label>
+      <input id="chartTitle" value="ملخص البيانات">
+    </div>
+    <div>
+      <label>عدد التصنيفات</label>
+      <select id="topN">
+        <option value="5">أعلى 5</option>
+        <option value="10">أعلى 10</option>
+        <option value="20">أعلى 20</option>
+        <option value="0">الكل</option>
+      </select>
+    </div>
+  </div>
+  <button onclick="saveSettings()">حفظ الإعدادات</button>
+  <button class="secondary" onclick="restoreSettings()">استرجاع الإعدادات</button>
+  <span id="settingsStatus" class="muted"></span>
+</section>
+
+<div class="charts">
+  <div class="chartbox">
+    <h3 id="mainChartTitle">ملخص البيانات</h3>
+    <div class="chart"><canvas id="mainChart"></canvas></div>
+    <button class="secondary" onclick="saveChart('mainChart','main-chart')">تنزيل PNG</button>
+  </div>
+  <div class="chartbox">
+    <h3 id="distributionTitle">توزيع السجلات</h3>
+    <div class="chart"><canvas id="distributionChart"></canvas></div>
+    <button class="secondary" onclick="saveChart('distributionChart','distribution-chart')">تنزيل PNG</button>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>4. إدارة البيانات</h2>
+  <button onclick="openEditor()">+ إضافة صف</button>
+  <button class="secondary" onclick="exportCSV(false)">تصدير النتائج المفلترة CSV</button>
+  <button class="secondary" onclick="exportCSV(true)">تصدير كل البيانات CSV</button>
+  <button class="secondary" onclick="exportJSON()">نسخة احتياطية JSON</button>
+  <div class="table-wrap" style="margin-top:15px" id="tableArea"></div>
+</section>
+</div>
+
+<p id="emptyMessage">ارفع ملف CSV أو جرّب بيانات المثال لبدء الاستخدام.</p>
+</main>
+
+<div id="editor" class="modal hidden">
+  <div class="modal-box">
+    <h2 id="editorTitle">إضافة صف</h2>
+    <form id="editorForm">
+      <div class="modal-grid" id="editorFields"></div>
+      <button type="submit">حفظ</button>
+      <button type="button" class="secondary" onclick="closeEditor()">إلغاء</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const colors = [
+  '#2458d3','#0f766e','#f59e0b','#9333ea',
+  '#e11d48','#0891b2','#65a30d','#ea580c'
+];
+
+let headers = [];
+let rows = [];
+let filtered = [];
+let charts = {};
+let editingIndex = null;
+
+function numeric(value) {
+  if (value === null || value === undefined || String(value).trim() === '') return false;
+  return Number.isFinite(Number(String(value).replace(/[,\s]/g,'')));
+}
+function numberValue(value) {
+  return Number(String(value ?? '').replace(/[,\s]/g,'')) || 0;
+}
+function format(value) {
+  return Number(value || 0).toLocaleString('en-US',{maximumFractionDigits:2});
+}
+function download(filename, content, type) {
+  const blob = new Blob([content],{type:type || 'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function setOptions(id, values, firstLabel) {
+  const select = $(id);
+  select.replaceChildren();
+  if (firstLabel !== undefined) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = firstLabel;
+    select.appendChild(option);
+  }
+  values.forEach(value=>{
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+}
+function parseCSV(text) {
+  if (!window.Papa) throw Error('تعذر تحميل مكتبة CSV. تحقق من الإنترنت.');
+  const result = Papa.parse(text,{skipEmptyLines:'greedy'});
+  if (!result.data || result.data.length < 2)
+    throw Error('الملف يحتاج عناوين أعمدة وصف بيانات واحدًا على الأقل.');
+  const originalHeaders = result.data[0].map((h,i)=>String(h || '').trim() || `عمود ${i+1}`);
+  const seen = {};
+  headers = originalHeaders.map(h=>{
+    seen[h] = (seen[h] || 0) + 1;
+    return seen[h] > 1 ? `${h} (${seen[h]})` : h;
+  });
+  rows = result.data.slice(1)
+    .filter(row=>row.some(v=>String(v ?? '').trim() !== ''))
+    .map(row=>{
+      const obj = {};
+      headers.forEach((h,i)=>obj[h] = row[i] ?? '');
+      return obj;
+    });
+  if (!rows.length) throw Error('لا توجد بيانات في الملف.');
+  initialize();
+}
+$('csvFile').addEventListener('change',event=>{
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  $('fileStatus').textContent = 'جاري قراءة الملف...';
+  reader.onload = ()=>{
+    try {
+      parseCSV(reader.result);
+      $('fileStatus').textContent = `تم تحميل ${rows.length} صف`;
+    } catch(e) {
+      $('fileStatus').textContent = e.message;
+    }
+  };
+  reader.readAsText(file,'UTF-8');
+});
+
+function loadSample() {
+  const sample = [
+    ['الفرع','القسم','الموظف','المبيعات','الكمية','الحالة'],
+    ['القاهرة','إلكترونيات','أحمد',12500,8,'مكتمل'],
+    ['الجيزة','ملابس','منى',8400,14,'مكتمل'],
+    ['الإسكندرية','إلكترونيات','علي',15300,10,'معلق'],
+    ['القاهرة','أغذية','سارة',6200,25,'مكتمل'],
+    ['الجيزة','أغذية','محمود',7100,20,'ملغي'],
+    ['الإسكندرية','ملابس','نور',9900,12,'مكتمل'],
+    ['القاهرة','ملابس','عمر',11300,9,'معلق'],
+    ['الجيزة','إلكترونيات','ياسمين',17800,7,'مكتمل']
+  ];
+  headers = sample[0];
+  rows = sample.slice(1).map(row=>{
+    const obj = {};
+    headers.forEach((h,i)=>obj[h] = row[i]);
+    return obj;
+  });
+  initialize();
+}
+function isNumericColumn(header) {
+  const values = rows.map(r=>r[header]).filter(v=>String(v ?? '').trim()!=='');
+  return values.length > 0 && values.filter(numeric).length / values.length >= .7;
+}
+function uniqueValues(header) {
+  return [...new Set(rows.map(r=>String(r[header] ?? '')).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'ar'));
+}
+function initialize() {
+  $('dashboard').classList.remove('hidden');
+  $('emptyMessage').classList.add('hidden');
+  const numbers = headers.filter(isNumericColumn);
+  const categories = headers.filter(h=>!isNumericColumn(h));
+  setOptions('filterColumn',headers,'كل الأعمدة');
+  setOptions('filterValue',[],'كل القيم');
+  setOptions('dimension',categories.length ? categories : headers);
+  setOptions('metric',numbers,'عدد السجلات');
+  setOptions('kpi1',['__rows','__cols',...numbers.map(h=>'__sum:'+h)]);
+  setOptions('kpi2',['__rows','__cols',...numbers.map(h=>'__sum:'+h)]);
+  setOptions('kpi3',['__rows','__cols',...numbers.map(h=>'__avg:'+h)]);
+  setOptions('kpi4',['__rows','__cols',...headers.map(h=>'__unique:'+h)]);
+  $('kpi1').value='__rows';
+  $('kpi2').value=numbers.length?'__sum:'+numbers[0]:'__cols';
+  $('kpi3').value=numbers.length?'__avg:'+numbers[0]:'__rows';
+  $('kpi4').value='__unique:'+headers[0];
+  $('metric').value=numbers[0] || '';
+  $('aggregation').value=numbers.length?'sum':'count';
+  const saved = readSettings();
+  if(saved) applySettings(saved);
+  bindControls();
+  applyFilters();
+  $('reportBtn').disabled = false;
+}
+function bindControls() {
+  ['search','filterColumn','filterValue'].forEach(id=>{
+    $(id).oninput = ()=>{if(id==='filterColumn') updateFilterValues();applyFilters()};
+    $(id).onchange = ()=>{if(id==='filterColumn') updateFilterValues();applyFilters()};
+  });
+  ['dimension','metric','aggregation','chartType','kpi1','kpi2','kpi3','kpi4','chartTitle','topN']
+    .forEach(id=>$(id).onchange=()=>{renderKPIs();renderCharts();renderTable()});
+}
+function updateFilterValues() {
+  const header = $('filterColumn').value;
+  setOptions('filterValue',header?uniqueValues(header):[],'كل القيم');
+}
+function clearFilters() {
+  $('search').value='';
+  $('filterColumn').value='';
+  updateFilterValues();
+  applyFilters();
+}
+function applyFilters() {
+  const query = $('search').value.trim().toLocaleLowerCase();
+  const col = $('filterColumn').value;
+  const value = $('filterValue').value;
+  filtered = rows.filter(row=>
+    (!col || !value || String(row[col])===value) &&
+    (!query || headers.some(h=>String(row[h] ?? '').toLocaleLowerCase().includes(query)))
+  );
+  $('recordCount').textContent = `${filtered.length} من ${rows.length} سجل`;
+  renderKPIs();
+  renderCharts();
+  renderTable();
+}
+function sum(header) {
+  return filtered.reduce((total,row)=>total+(numeric(row[header])?numberValue(row[header]):0),0);
+}
+function indicatorValue(key) {
+  if(key==='__rows') return filtered.length;
+  if(key==='__cols') return headers.length;
+  if(key.startsWith('__sum:')) return sum(key.slice(6));
+  if(key.startsWith('__avg:')) {
+    const h=key.slice(6), vals=filtered.filter(r=>numeric(r[h]));
+    return vals.length ? sum(h)/vals.length : 0;
+  }
+  if(key.startsWith('__unique:'))
+    return new Set(filtered.map(r=>String(r[key.slice(9)] ?? '')).filter(Boolean)).size;
+  return 0;
+}
+function indicatorLabel(key) {
+  if(key==='__rows') return 'عدد السجلات';
+  if(key==='__cols') return 'عدد الأعمدة';
+  if(key.startsWith('__sum:')) return 'مجموع '+key.slice(6);
+  if(key.startsWith('__avg:')) return 'متوسط '+key.slice(6);
+  if(key.startsWith('__unique:')) return 'قيم مميزة: '+key.slice(9);
+  return key;
+}
+function renderKPIs() {
+  $('kpis').replaceChildren();
+  ['kpi1','kpi2','kpi3','kpi4'].forEach(id=>{
+    const key=$(id).value || '__rows';
+    const card=document.createElement('div');
+    card.className='kpi';
+    const label=document.createElement('small');
+    label.textContent=indicatorLabel(key);
+    const value=document.createElement('div');
+    value.className='value';
+    value.textContent=format(indicatorValue(key));
+    card.append(label,value);
+    $('kpis').appendChild(card);
+  });
+}
+function groupedData() {
+  const dimension=$('dimension').value;
+  const metric=$('metric').value;
+  const aggregation=$('aggregation').value;
+  const map=new Map();
+  filtered.forEach(row=>{
+    const key=String(row[dimension] ?? '') || '(فارغ)';
+    if(!map.has(key)) map.set(key,{sum:0,count:0,valid:0});
+    const entry=map.get(key);
+    entry.count++;
+    if(metric && numeric(row[metric])) {
+      entry.sum+=numberValue(row[metric]);
+      entry.valid++;
+    }
+  });
+  let data=[...map].map(([label,v])=>({
+    label,
+    value:aggregation==='count' ? v.count :
+      aggregation==='avg' ? (v.valid?v.sum/v.valid:0) : v.sum
+  })).sort((a,b)=>b.value-a.value);
+  const n=Number($('topN').value);
+  return n ? data.slice(0,n) : data;
+}
+function makeChart(id,type,data,options={}) {
+  if(charts[id]) charts[id].destroy();
+  charts[id]=new Chart($(id),{
+    type,
+    data,
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',rtl:true}},
+      ...options
+    }
+  });
+}
+function renderCharts() {
+  if(!filtered.length) {
+    Object.values(charts).forEach(c=>c.destroy());
+    charts={};
+    return;
+  }
+  const grouped=groupedData();
+  const type=$('chartType').value;
+  const title=$('chartTitle').value || 'ملخص البيانات';
+  $('mainChartTitle').textContent=title;
+  makeChart('mainChart',type,{
+    labels:grouped.map(x=>x.label),
+    datasets:[{
+      label:title,
+      data:grouped.map(x=>x.value),
+      backgroundColor:grouped.map((_,i)=>colors[i%colors.length]),
+      borderColor:'#2458d3',
+      borderWidth:2,
+      tension:.25
+    }]
+  },(type==='pie'||type==='doughnut')?{}:{
+    scales:{y:{beginAtZero:true}}
+  });
+  const category=headers.find(h=>!isNumericColumn(h)) || headers[0];
+  const map=new Map();
+  filtered.forEach(row=>{
+    const value=String(row[category] ?? '') || '(فارغ)';
+    map.set(value,(map.get(value)||0)+1);
+  });
+  const dist=[...map].sort((a,b)=>b[1]-a[1]).slice(0,10);
+  $('distributionTitle').textContent='توزيع السجلات حسب '+category;
+  makeChart('distributionChart','doughnut',{
+    labels:dist.map(x=>x[0]),
+    datasets:[{
+      data:dist.map(x=>x[1]),
+      backgroundColor:dist.map((_,i)=>colors[i%colors.length])
+    }]
+  });
+}
+function renderTable() {
+  const table=document.createElement('table');
+  const thead=document.createElement('thead');
+  const headRow=document.createElement('tr');
+  [...headers,'الإجراءات'].forEach(h=>{
+    const th=document.createElement('th');
+    th.textContent=h;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  filtered.forEach(row=>{
+    const index=rows.indexOf(row);
+    const tr=document.createElement('tr');
+    headers.forEach(h=>{
+      const td=document.createElement('td');
+      td.textContent=row[h] ?? '';
+      tr.appendChild(td);
+    });
+    const td=document.createElement('td');
+    const edit=document.createElement('button');
+    edit.className='secondary';
+    edit.textContent='تعديل';
+    edit.onclick=()=>openEditor(index);
+    const del=document.createElement('button');
+    del.className='danger';
+    del.textContent='حذف';
+    del.onclick=()=>deleteRow(index);
+    td.append(edit,del);
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  $('tableArea').replaceChildren(table);
+}
+function openEditor(index=null) {
+  editingIndex=index;
+  $('editorTitle').textContent=index===null?'إضافة صف جديد':'تعديل صف';
+  $('editorFields').replaceChildren();
+  headers.forEach(header=>{
+    const wrap=document.createElement('div');
+    const label=document.createElement('label');
+    label.textContent=header;
+    const input=document.createElement('input');
+    input.name=header;
+    input.value=index===null?'':String(rows[index][header] ?? '');
+    wrap.append(label,input);
+    $('editorFields').appendChild(wrap);
+  });
+  $('editor').classList.remove('hidden');
+}
+function closeEditor() {$('editor').classList.add('hidden');}
+$('editorForm').addEventListener('submit',event=>{
+  event.preventDefault();
+  const obj={};
+  headers.forEach(h=>obj[h]=$('editorForm').elements[h].value);
+  if(editingIndex===null) rows.push(obj);
+  else rows[editingIndex]=obj;
+  closeEditor();
+  applyFilters();
+});
+function deleteRow(index) {
+  if(!confirm('هل تريد حذف هذا الصف؟')) return;
+  rows.splice(index,1);
+  applyFilters();
+}
+function csvText(data) {
+  const matrix=[headers,...data.map(row=>headers.map(h=>row[h] ?? ''))];
+  return '\ufeff'+Papa.unparse(matrix);
+}
+function exportCSV(all) {
+  download(all?'all-data.csv':'filtered-data.csv',
+    csvText(all?rows:filtered),'text/csv;charset=utf-8');
+}
+function exportJSON() {
+  download('dashboard-backup.json',
+    JSON.stringify({headers,rows,settings:getSettings()},null,2),
+    'application/json;charset=utf-8');
+}
+function saveChart(id,name) {
+  if(!charts[id]) return;
+  const a=document.createElement('a');
+  a.href=charts[id].toBase64Image();
+  a.download=name+'.png';
+  a.click();
+}
+function getSettings() {
+  const ids=['dimension','metric','aggregation','chartType','kpi1','kpi2','kpi3','kpi4','chartTitle','topN'];
+  return Object.fromEntries(ids.map(id=>[id,$(id).value]));
+}
+function saveSettings() {
+  try {
+    localStorage.setItem('smartDashboardSettings',JSON.stringify(getSettings()));
+    $('settingsStatus').textContent='تم حفظ الإعدادات على هذا الجهاز.';
+  } catch(e) {
+    $('settingsStatus').textContent='تعذر حفظ الإعدادات في المتصفح.';
+  }
+}
+function readSettings() {
+  try {return JSON.parse(localStorage.getItem('smartDashboardSettings')||'null');}
+  catch(e) {return null;}
+}
+function applySettings(settings) {
+  Object.entries(settings||{}).forEach(([id,value])=>{
+    if($(id) && [...$(id).options].some(o=>o.value===String(value)))
+      $(id).value=String(value);
+  });
+}
+function restoreSettings() {
+  const settings=readSettings();
+  if(!settings) {
+    $('settingsStatus').textContent='لا توجد إعدادات محفوظة.';
+    return;
+  }
+  applySettings(settings);
+  renderKPIs();renderCharts();renderTable();
+  $('settingsStatus').textContent='تم استرجاع الإعدادات.';
+}
+function escapeHTML(value) {
+  return String(value??'').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function exportReport() {
+  const kpis=[...$('kpis').children].map(el=>
+    `<div class="kpi"><p>${escapeHTML(el.querySelector('small').textContent)}</p><h2>${escapeHTML(el.querySelector('.value').textContent)}</h2></div>`
+  ).join('');
+  const images=['mainChart','distributionChart'].map(id=>
+    charts[id]?charts[id].toBase64Image():''
+  );
+  const headersHTML=headers.map(h=>`<th>${escapeHTML(h)}</th>`).join('');
+  const tableRows=filtered.slice(0,1000).map(row=>
+    '<tr>'+headers.map(h=>`<td>${escapeHTML(row[h])}</td>`).join('')+'</tr>'
+  ).join('');
+  const html=`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8">
+  <title>تقرير الداشبورد</title><style>
+  body{font-family:Arial,Tahoma;background:#f3f6fb;padding:20px}
+  .kpis,.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .kpi,.card{background:white;padding:14px;border-radius:12px;margin:8px}
+  img{width:100%}table{border-collapse:collapse;width:100%;background:white}
+  td,th{padding:7px;border:1px solid #ddd;text-align:right}
+  </style><h1>تقرير Smart Data Dashboard</h1>
+  <p>عدد السجلات: ${filtered.length}</p><div class="kpis">${kpis}</div>
+  <div class="charts"><div class="card"><h3>${escapeHTML($('mainChartTitle').textContent)}</h3><img src="${images[0]}"></div>
+  <div class="card"><h3>${escapeHTML($('distributionTitle').textContent)}</h3><img src="${images[1]}"></div></div>
+  <h2>البيانات المفلترة — أول 1000 صف</h2><table><thead><tr>${headersHTML}</tr></thead><tbody>${tableRows}</tbody></table></html>`;
+  download('dashboard-report.html',html,'text/html;charset=utf-8');
+}
+async function loadSheet() {
+  try {
+    const url=new URL($('sheetUrl').value.trim());
+    if(!url.hostname.includes('docs.google.com'))
+      throw Error('أدخل رابط Google Sheets صحيحًا.');
+    const match=url.pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if(!match) throw Error('تعذر تحديد ملف الشيت من الرابط.');
+    const gid=url.searchParams.get('gid') ||
+      ((url.hash.match(/gid=(\d+)/)||[])[1]) || '0';
+    const csvURL=`https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv&gid=${gid}`;
+    $('sheetStatus').textContent='جاري تحميل الشيت...';
+    const response=await fetch(csvURL);
+    if(!response.ok) throw Error('تعذر الوصول. تأكد أن الشيت متاح للعرض.');
+    const text=await response.text();
+    if(/<html|<!doctype/i.test(text))
+      throw Error('قد يكون الشيت خاصًا. جرّب تنزيله CSV ورفعه يدويًا.');
+    parseCSV(text);
+    $('sheetStatus').textContent='تم تحميل الشيت بنجاح.';
+  } catch(error) {
+    $('sheetStatus').textContent=error.message+' وقد تمنع سياسات Google التحميل المباشر.';
+  }
+}
+</script>
+</body>
+</html>
