@@ -1,681 +1,214 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Smart Data Dashboard Pro</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة متابعة الطلبات</title>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-
 <style>
-:root {
-  --bg:#f3f6fb; --card:#fff; --ink:#172033;
-  --muted:#64748b; --line:#dfe6ef; --blue:#2458d3;
-}
-* { box-sizing:border-box; }
-body {
-  margin:0; background:var(--bg); color:var(--ink);
-  font-family:Tahoma,Arial,sans-serif;
-}
-header {
-  background:linear-gradient(120deg,#102448,#2458d3);
-  color:white; padding:24px;
-}
-main { max-width:1400px; margin:auto; padding:18px; }
-h1,h2,h3 { margin-top:0; }
-.panel,.kpi,.chartbox {
-  background:var(--card); border:1px solid var(--line);
-  border-radius:14px; padding:16px; margin-bottom:16px;
-}
-button {
-  border:0; border-radius:8px; padding:10px 14px;
-  background:var(--blue); color:white; cursor:pointer;
-  margin:3px;
-}
-button.secondary { background:#e8eef8; color:#183153; }
-button.danger { background:#ffe8e8; color:#a12626; }
-input,select {
-  width:100%; padding:10px; border:1px solid #cbd5e1;
-  border-radius:8px; background:white; margin:4px 0 12px;
-}
-label { display:block; font-size:13px; font-weight:bold; }
-.grid,.charts,.settings {
-  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:14px;
-}
-.kpis {
-  display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:12px; margin-bottom:16px;
-}
-.kpi .value { font-size:26px; font-weight:bold; overflow-wrap:anywhere; }
-.kpi small,.muted { color:var(--muted); }
-.chart { height:300px; }
-.table-wrap { overflow:auto; max-height:480px; }
-table { border-collapse:collapse; width:100%; background:white; font-size:13px; }
-th,td { padding:9px; border-bottom:1px solid var(--line); text-align:right; }
-th { background:#edf2f8; position:sticky; top:0; }
-.hidden { display:none!important; }
-.modal {
-  position:fixed; inset:0; background:#0008; z-index:10;
-  display:flex; align-items:center; justify-content:center; padding:15px;
-}
-.modal-box {
-  background:white; padding:20px; border-radius:14px;
-  width:min(700px,100%); max-height:90vh; overflow:auto;
-}
-.modal-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-@media(max-width:700px) {
-  .grid,.charts,.settings { grid-template-columns:1fr; }
-  .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  main { padding:10px; }
-  .chart { height:250px; }
-}
+:root{--bg:#eceff3;--card:#fff;--ink:#14213d;--mut:#5b6678;--line:#d9dfe7;--navy:#14213d;--amb:#f2a900;--grn:#1b9a6c;--red:#d64545;--tea:#1f7a8c}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1522;--card:#172033;--ink:#e8edf6;--mut:#9aa7bb;--line:#2a3750}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'Segoe UI',Tahoma,system-ui,sans-serif}
+header{background:var(--navy);color:#fff;padding:20px 16px 26px;border-bottom:8px solid var(--amb);border-image:repeating-linear-gradient(135deg,#f2a900 0 14px,#14213d 14px 28px) 8}
+header h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;font-size:13px;opacity:.8}
+main{max-width:1280px;margin:14px auto 40px;padding:0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:15px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:3px}
+input,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
+button{border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;background:var(--navy);color:#fff}
+button.s{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+button:focus-visible,input:focus-visible,select:focus-visible,.drop:focus-within{outline:3px solid var(--amb);outline-offset:1px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
+.mut{color:var(--mut);font-size:13px}
+.drop{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border:2px dashed var(--line);border-radius:10px;padding:18px;cursor:pointer;text-align:center}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+@media(min-width:820px){.kpis{grid-template-columns:repeat(6,1fr)}.grid{grid-template-columns:1fr 1fr!important}}
+.k{background:var(--card);border:1px solid var(--line);border-inline-start:5px solid var(--c,var(--navy));border-radius:10px;padding:10px 12px}
+.k small{color:var(--mut);display:block;font-size:12px}
+.k b{font-size:24px;line-height:1.3;overflow-wrap:anywhere}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+.ch{height:280px;position:relative}
+.tw{overflow:auto;max-height:520px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+th{background:var(--bg);position:sticky;top:0;cursor:pointer}
+.hidden{display:none!important}
+@media print{header button,.bar button,.drop,.tw{display:none}}
 </style>
 </head>
-
 <body>
 <header>
-  <h1>Smart Data Dashboard Pro</h1>
-  <p>ارفع بياناتك وحللها وخصص الداشبورد بسهولة.</p>
-  <button class="secondary" onclick="loadSample()">تجربة بيانات مثال</button>
-  <button id="reportBtn" onclick="exportReport()" disabled>تصدير تقرير HTML</button>
+<h1>لوحة متابعة الطلبات</h1>
+<p>ارفع ملف الطلبات وهتشوف نسب التسليم وسرعة التجهيز والطلبات المتأخرة جاهزة.</p>
 </header>
-
 <main>
-<section class="panel">
-  <h2>1. مصدر البيانات</h2>
-  <div class="grid">
-    <div>
-      <label>رفع ملف CSV</label>
-      <input type="file" id="csvFile" accept=".csv,text/csv">
-      <p class="muted" id="fileStatus">اختر ملفًا من جهازك.</p>
-    </div>
-    <div>
-      <label>رابط Google Sheets</label>
-      <input id="sheetUrl" type="url" placeholder="رابط الشيت">
-      <button onclick="loadSheet()">تحميل الشيت</button>
-      <p class="muted" id="sheetStatus">
-        يجب أن يكون الشيت متاحًا للعرض عبر الرابط.
-      </p>
-    </div>
-  </div>
-</section>
+<section class="card"><div class="row">
+<label class="drop" id="drop"><input type="file" id="file" accept=".csv,text/csv" hidden><b>اختار ملف CSV</b><small class="mut" id="st">أو اسحب الملف هنا</small></label>
+<div><label for="url">رابط Google Sheets (اختياري)</label><input id="url" placeholder="الصق الرابط هنا"><div class="bar"><button onclick="sheet()">تحميل الشيت</button><button class="s" onclick="sample()">جرّب بيانات مثال</button></div></div>
+</div></section>
 
-<div id="dashboard" class="hidden">
-<section class="panel">
-  <h2>2. البحث والفلاتر</h2>
-  <div class="grid">
-    <div>
-      <label>بحث في البيانات</label>
-      <input id="search" placeholder="اكتب كلمة للبحث">
-    </div>
-    <div>
-      <label>فلترة حسب عمود</label>
-      <select id="filterColumn"></select>
-    </div>
-    <div>
-      <label>قيمة الفلتر</label>
-      <select id="filterValue"></select>
-    </div>
-    <div>
-      <label>عدد النتائج</label>
-      <p id="recordCount">0</p>
-      <button class="secondary" onclick="clearFilters()">مسح الفلاتر</button>
-    </div>
-  </div>
-</section>
+<div id="app" class="hidden">
+<section class="card"><div class="row">
+<div><label for="q">بحث</label><input id="q" placeholder="اكتب أي كلمة"></div>
+<div id="dw"><label for="d1">من تاريخ</label><input type="date" id="d1"></div>
+<div id="dw2"><label for="d2">إلى تاريخ</label><input type="date" id="d2"></div>
+<div id="fw"><label for="fc">فلتر حسب</label><select id="fc"></select></div>
+<div id="fvw"><label for="fv">القيمة</label><select id="fv"></select></div>
+</div>
+<div class="bar"><span id="cnt" class="mut"></span><button class="s" onclick="reset()">مسح الفلاتر</button></div></section>
 
-<div class="kpis" id="kpis"></div>
+<div class="kpis" id="kp"></div>
 
-<section class="panel">
-  <h2>3. تخصيص الداشبورد</h2>
-  <div class="settings">
-    <div>
-      <label>عمود التصنيف</label>
-      <select id="dimension"></select>
-    </div>
-    <div>
-      <label>العمود الرقمي</label>
-      <select id="metric"></select>
-    </div>
-    <div>
-      <label>طريقة الحساب</label>
-      <select id="aggregation">
-        <option value="sum">المجموع</option>
-        <option value="avg">المتوسط</option>
-        <option value="count">عدد السجلات</option>
-      </select>
-    </div>
-    <div>
-      <label>نوع الرسم</label>
-      <select id="chartType">
-        <option value="bar">أعمدة</option>
-        <option value="line">خطي</option>
-        <option value="pie">دائري</option>
-        <option value="doughnut">دائري مجوف</option>
-      </select>
-    </div>
-    <div>
-      <label>المؤشر الأول</label><select id="kpi1"></select>
-    </div>
-    <div>
-      <label>المؤشر الثاني</label><select id="kpi2"></select>
-    </div>
-    <div>
-      <label>المؤشر الثالث</label><select id="kpi3"></select>
-    </div>
-    <div>
-      <label>المؤشر الرابع</label><select id="kpi4"></select>
-    </div>
-    <div>
-      <label>عنوان الرسم</label>
-      <input id="chartTitle" value="ملخص البيانات">
-    </div>
-    <div>
-      <label>عدد التصنيفات</label>
-      <select id="topN">
-        <option value="5">أعلى 5</option>
-        <option value="10">أعلى 10</option>
-        <option value="20">أعلى 20</option>
-        <option value="0">الكل</option>
-      </select>
-    </div>
-  </div>
-  <button onclick="saveSettings()">حفظ الإعدادات</button>
-  <button class="secondary" onclick="restoreSettings()">استرجاع الإعدادات</button>
-  <span id="settingsStatus" class="muted"></span>
-</section>
-
-<div class="charts">
-  <div class="chartbox">
-    <h3 id="mainChartTitle">ملخص البيانات</h3>
-    <div class="chart"><canvas id="mainChart"></canvas></div>
-    <button class="secondary" onclick="saveChart('mainChart','main-chart')">تنزيل PNG</button>
-  </div>
-  <div class="chartbox">
-    <h3 id="distributionTitle">توزيع السجلات</h3>
-    <div class="chart"><canvas id="distributionChart"></canvas></div>
-    <button class="secondary" onclick="saveChart('distributionChart','distribution-chart')">تنزيل PNG</button>
-  </div>
+<div class="grid">
+<div class="card" id="c1"><h3 id="t1"></h3><div class="ch"><canvas id="g1"></canvas></div></div>
+<div class="card" id="c2"><h3>عدد الطلبات كل يوم</h3><div class="ch"><canvas id="g2"></canvas></div></div>
+<div class="card" id="c3"><h3>متوسط الوقت بين المراحل (بالساعات)</h3><div class="ch"><canvas id="g3"></canvas></div></div>
+<div class="card" id="c4"><h3>رسم حسب اختيارك</h3>
+<div class="row"><div><label for="cd">التصنيف</label><select id="cd"></select></div><div><label for="cm">الرقم</label><select id="cm"></select></div>
+<div><label for="ca">الحساب</label><select id="ca"><option value="sum">المجموع</option><option value="avg">المتوسط</option><option value="count">العدد</option></select></div>
+<div><label for="ct">الشكل</label><select id="ct"><option value="bar">أعمدة</option><option value="line">خط</option><option value="doughnut">دائري</option></select></div>
+<div><label for="cn">عدد التصنيفات</label><select id="cn"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="0">الكل</option></select></div></div>
+<div class="ch" style="margin-top:10px"><canvas id="g4"></canvas></div></div>
 </div>
 
-<section class="panel">
-  <h2>4. إدارة البيانات</h2>
-  <button onclick="openEditor()">+ إضافة صف</button>
-  <button class="secondary" onclick="exportCSV(false)">تصدير النتائج المفلترة CSV</button>
-  <button class="secondary" onclick="exportCSV(true)">تصدير كل البيانات CSV</button>
-  <button class="secondary" onclick="exportJSON()">نسخة احتياطية JSON</button>
-  <div class="table-wrap" style="margin-top:15px" id="tableArea"></div>
-</section>
+<section class="card"><h3>البيانات</h3>
+<div class="bar" style="justify-content:flex-start;margin:0 0 8px"><button onclick="exp(0)">تصدير النتائج CSV</button><button class="s" onclick="exp(1)">تصدير الكل CSV</button><button class="s" onclick="window.print()">طباعة / PDF</button></div>
+<div class="tw" id="tw"></div><div class="bar" id="pg"></div></section>
 </div>
-
-<p id="emptyMessage">ارفع ملف CSV أو جرّب بيانات المثال لبدء الاستخدام.</p>
 </main>
 
-<div id="editor" class="modal hidden">
-  <div class="modal-box">
-    <h2 id="editorTitle">إضافة صف</h2>
-    <form id="editorForm">
-      <div class="modal-grid" id="editorFields"></div>
-      <button type="submit">حفظ</button>
-      <button type="button" class="secondary" onclick="closeEditor()">إلغاء</button>
-    </form>
-  </div>
-</div>
-
 <script>
-const $ = id => document.getElementById(id);
-const colors = [
-  '#2458d3','#0f766e','#f59e0b','#9333ea',
-  '#e11d48','#0891b2','#65a30d','#ea580c'
-];
+const $=i=>document.getElementById(i),p=n=>String(n).padStart(2,'0'),
+P=['#14213d','#f2a900','#1f7a8c','#1b9a6c','#d64545','#7b5ea7','#84a98c','#e07a5f'],
+ST=[['created',/^order created/i,'إنشاء الطلب'],['picked',/picked/i,'الالتقاط'],['packed',/packed/i,'التعبئة'],['shipped',/^order shipped/i,'الشحن'],['delivered',/delivered/i,'التسليم']],
+EX=[['returned',/^order returned/i,'مرتجع'],['cancelled',/cancel/i,'ملغي']];
+let H=[],R=[],F=[],T={},S=[],X=[],MD=null,C={},sort={k:null,d:1},page=0;
 
-let headers = [];
-let rows = [];
-let filtered = [];
-let charts = {};
-let editingIndex = null;
+function pd(v){v=String(v||'').trim();let m=v.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/);
+ if(m)return new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0));
+ m=v.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})(?:[ T](\d{1,2}):(\d{2}))?/);
+ return m?new Date(+m[3],m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)):null}
+function dt(r,h){const c=r._d||(r._d={});return h in c?c[h]:(c[h]=pd(r[h]))}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=n=>Number(n||0).toLocaleString('en-US',{maximumFractionDigits:1});
+const fh=h=>h==null?'—':h<48?h.toFixed(1)+' ساعة':(h/24).toFixed(1)+' يوم';
 
-function numeric(value) {
-  if (value === null || value === undefined || String(value).trim() === '') return false;
-  return Number.isFinite(Number(String(value).replace(/[,\s]/g,'')));
-}
-function numberValue(value) {
-  return Number(String(value ?? '').replace(/[,\s]/g,'')) || 0;
-}
-function format(value) {
-  return Number(value || 0).toLocaleString('en-US',{maximumFractionDigits:2});
-}
-function download(filename, content, type) {
-  const blob = new Blob([content],{type:type || 'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-function setOptions(id, values, firstLabel) {
-  const select = $(id);
-  select.replaceChildren();
-  if (firstLabel !== undefined) {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = firstLabel;
-    select.appendChild(option);
-  }
-  values.forEach(value=>{
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent = value;
-    select.appendChild(option);
-  });
-}
-function parseCSV(text) {
-  if (!window.Papa) throw Error('تعذر تحميل مكتبة CSV. تحقق من الإنترنت.');
-  const result = Papa.parse(text,{skipEmptyLines:'greedy'});
-  if (!result.data || result.data.length < 2)
-    throw Error('الملف يحتاج عناوين أعمدة وصف بيانات واحدًا على الأقل.');
-  const originalHeaders = result.data[0].map((h,i)=>String(h || '').trim() || `عمود ${i+1}`);
-  const seen = {};
-  headers = originalHeaders.map(h=>{
-    seen[h] = (seen[h] || 0) + 1;
-    return seen[h] > 1 ? `${h} (${seen[h]})` : h;
-  });
-  rows = result.data.slice(1)
-    .filter(row=>row.some(v=>String(v ?? '').trim() !== ''))
-    .map(row=>{
-      const obj = {};
-      headers.forEach((h,i)=>obj[h] = row[i] ?? '');
-      return obj;
-    });
-  if (!rows.length) throw Error('لا توجد بيانات في الملف.');
-  initialize();
-}
-$('csvFile').addEventListener('change',event=>{
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  $('fileStatus').textContent = 'جاري قراءة الملف...';
-  reader.onload = ()=>{
-    try {
-      parseCSV(reader.result);
-      $('fileStatus').textContent = `تم تحميل ${rows.length} صف`;
-    } catch(e) {
-      $('fileStatus').textContent = e.message;
-    }
-  };
-  reader.readAsText(file,'UTF-8');
-});
+function detect(){T={};const s=R.slice(0,5000);
+ H.forEach(h=>{const v=s.map(r=>String(r[h]??'').trim()).filter(Boolean);
+  if(!v.length){T[h]='empty';return}
+  const u=new Set(v).size;
+  if(v.filter(x=>pd(x)).length/v.length>.8)T[h]='date';
+  else if(/(^|[\s_-])(id|reference|ref|code|sku|barcode|phone|awb|tracking)([\s_-]|$)/i.test(h))T[h]='id';
+  else if(v.filter(x=>isFinite(+x.replace(/,/g,''))).length/v.length>.8)T[h]=v.every(x=>/^\d+$/.test(x))&&u>.95*v.length&&v.length>20?'id':'num';
+  else T[h]=u<=40&&v.length/s.length>.3?'cat':'text'})}
 
-function loadSample() {
-  const sample = [
-    ['الفرع','القسم','الموظف','المبيعات','الكمية','الحالة'],
-    ['القاهرة','إلكترونيات','أحمد',12500,8,'مكتمل'],
-    ['الجيزة','ملابس','منى',8400,14,'مكتمل'],
-    ['الإسكندرية','إلكترونيات','علي',15300,10,'معلق'],
-    ['القاهرة','أغذية','سارة',6200,25,'مكتمل'],
-    ['الجيزة','أغذية','محمود',7100,20,'ملغي'],
-    ['الإسكندرية','ملابس','نور',9900,12,'مكتمل'],
-    ['القاهرة','ملابس','عمر',11300,9,'معلق'],
-    ['الجيزة','إلكترونيات','ياسمين',17800,7,'مكتمل']
-  ];
-  headers = sample[0];
-  rows = sample.slice(1).map(row=>{
-    const obj = {};
-    headers.forEach((h,i)=>obj[h] = row[i]);
-    return obj;
-  });
-  initialize();
-}
-function isNumericColumn(header) {
-  const values = rows.map(r=>r[header]).filter(v=>String(v ?? '').trim()!=='');
-  return values.length > 0 && values.filter(numeric).length / values.length >= .7;
-}
-function uniqueValues(header) {
-  return [...new Set(rows.map(r=>String(r[header] ?? '')).filter(Boolean))]
-    .sort((a,b)=>a.localeCompare(b,'ar'));
-}
-function initialize() {
-  $('dashboard').classList.remove('hidden');
-  $('emptyMessage').classList.add('hidden');
-  const numbers = headers.filter(isNumericColumn);
-  const categories = headers.filter(h=>!isNumericColumn(h));
-  setOptions('filterColumn',headers,'كل الأعمدة');
-  setOptions('filterValue',[],'كل القيم');
-  setOptions('dimension',categories.length ? categories : headers);
-  setOptions('metric',numbers,'عدد السجلات');
-  setOptions('kpi1',['__rows','__cols',...numbers.map(h=>'__sum:'+h)]);
-  setOptions('kpi2',['__rows','__cols',...numbers.map(h=>'__sum:'+h)]);
-  setOptions('kpi3',['__rows','__cols',...numbers.map(h=>'__avg:'+h)]);
-  setOptions('kpi4',['__rows','__cols',...headers.map(h=>'__unique:'+h)]);
-  $('kpi1').value='__rows';
-  $('kpi2').value=numbers.length?'__sum:'+numbers[0]:'__cols';
-  $('kpi3').value=numbers.length?'__avg:'+numbers[0]:'__rows';
-  $('kpi4').value='__unique:'+headers[0];
-  $('metric').value=numbers[0] || '';
-  $('aggregation').value=numbers.length?'sum':'count';
-  const saved = readSettings();
-  if(saved) applySettings(saved);
-  bindControls();
-  applyFilters();
-  $('reportBtn').disabled = false;
-}
-function bindControls() {
-  ['search','filterColumn','filterValue'].forEach(id=>{
-    $(id).oninput = ()=>{if(id==='filterColumn') updateFilterValues();applyFilters()};
-    $(id).onchange = ()=>{if(id==='filterColumn') updateFilterValues();applyFilters()};
-  });
-  ['dimension','metric','aggregation','chartType','kpi1','kpi2','kpi3','kpi4','chartTitle','topN']
-    .forEach(id=>$(id).onchange=()=>{renderKPIs();renderCharts();renderTable()});
-}
-function updateFilterValues() {
-  const header = $('filterColumn').value;
-  setOptions('filterValue',header?uniqueValues(header):[],'كل القيم');
-}
-function clearFilters() {
-  $('search').value='';
-  $('filterColumn').value='';
-  updateFilterValues();
-  applyFilters();
-}
-function applyFilters() {
-  const query = $('search').value.trim().toLocaleLowerCase();
-  const col = $('filterColumn').value;
-  const value = $('filterValue').value;
-  filtered = rows.filter(row=>
-    (!col || !value || String(row[col])===value) &&
-    (!query || headers.some(h=>String(row[h] ?? '').toLocaleLowerCase().includes(query)))
-  );
-  $('recordCount').textContent = `${filtered.length} من ${rows.length} سجل`;
-  renderKPIs();
-  renderCharts();
-  renderTable();
-}
-function sum(header) {
-  return filtered.reduce((total,row)=>total+(numeric(row[header])?numberValue(row[header]):0),0);
-}
-function indicatorValue(key) {
-  if(key==='__rows') return filtered.length;
-  if(key==='__cols') return headers.length;
-  if(key.startsWith('__sum:')) return sum(key.slice(6));
-  if(key.startsWith('__avg:')) {
-    const h=key.slice(6), vals=filtered.filter(r=>numeric(r[h]));
-    return vals.length ? sum(h)/vals.length : 0;
-  }
-  if(key.startsWith('__unique:'))
-    return new Set(filtered.map(r=>String(r[key.slice(9)] ?? '')).filter(Boolean)).size;
-  return 0;
-}
-function indicatorLabel(key) {
-  if(key==='__rows') return 'عدد السجلات';
-  if(key==='__cols') return 'عدد الأعمدة';
-  if(key.startsWith('__sum:')) return 'مجموع '+key.slice(6);
-  if(key.startsWith('__avg:')) return 'متوسط '+key.slice(6);
-  if(key.startsWith('__unique:')) return 'قيم مميزة: '+key.slice(9);
-  return key;
-}
-function renderKPIs() {
-  $('kpis').replaceChildren();
-  ['kpi1','kpi2','kpi3','kpi4'].forEach(id=>{
-    const key=$(id).value || '__rows';
-    const card=document.createElement('div');
-    card.className='kpi';
-    const label=document.createElement('small');
-    label.textContent=indicatorLabel(key);
-    const value=document.createElement('div');
-    value.className='value';
-    value.textContent=format(indicatorValue(key));
-    card.append(label,value);
-    $('kpis').appendChild(card);
-  });
-}
-function groupedData() {
-  const dimension=$('dimension').value;
-  const metric=$('metric').value;
-  const aggregation=$('aggregation').value;
-  const map=new Map();
-  filtered.forEach(row=>{
-    const key=String(row[dimension] ?? '') || '(فارغ)';
-    if(!map.has(key)) map.set(key,{sum:0,count:0,valid:0});
-    const entry=map.get(key);
-    entry.count++;
-    if(metric && numeric(row[metric])) {
-      entry.sum+=numberValue(row[metric]);
-      entry.valid++;
-    }
-  });
-  let data=[...map].map(([label,v])=>({
-    label,
-    value:aggregation==='count' ? v.count :
-      aggregation==='avg' ? (v.valid?v.sum/v.valid:0) : v.sum
-  })).sort((a,b)=>b.value-a.value);
-  const n=Number($('topN').value);
-  return n ? data.slice(0,n) : data;
-}
-function makeChart(id,type,data,options={}) {
-  if(charts[id]) charts[id].destroy();
-  charts[id]=new Chart($(id),{
-    type,
-    data,
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',rtl:true}},
-      ...options
-    }
-  });
-}
-function renderCharts() {
-  if(!filtered.length) {
-    Object.values(charts).forEach(c=>c.destroy());
-    charts={};
-    return;
-  }
-  const grouped=groupedData();
-  const type=$('chartType').value;
-  const title=$('chartTitle').value || 'ملخص البيانات';
-  $('mainChartTitle').textContent=title;
-  makeChart('mainChart',type,{
-    labels:grouped.map(x=>x.label),
-    datasets:[{
-      label:title,
-      data:grouped.map(x=>x.value),
-      backgroundColor:grouped.map((_,i)=>colors[i%colors.length]),
-      borderColor:'#2458d3',
-      borderWidth:2,
-      tension:.25
-    }]
-  },(type==='pie'||type==='doughnut')?{}:{
-    scales:{y:{beginAtZero:true}}
-  });
-  const category=headers.find(h=>!isNumericColumn(h)) || headers[0];
-  const map=new Map();
-  filtered.forEach(row=>{
-    const value=String(row[category] ?? '') || '(فارغ)';
-    map.set(value,(map.get(value)||0)+1);
-  });
-  const dist=[...map].sort((a,b)=>b[1]-a[1]).slice(0,10);
-  $('distributionTitle').textContent='توزيع السجلات حسب '+category;
-  makeChart('distributionChart','doughnut',{
-    labels:dist.map(x=>x[0]),
-    datasets:[{
-      data:dist.map(x=>x[1]),
-      backgroundColor:dist.map((_,i)=>colors[i%colors.length])
-    }]
-  });
-}
-function renderTable() {
-  const table=document.createElement('table');
-  const thead=document.createElement('thead');
-  const headRow=document.createElement('tr');
-  [...headers,'الإجراءات'].forEach(h=>{
-    const th=document.createElement('th');
-    th.textContent=h;
-    headRow.appendChild(th);
-  });
-  thead.appendChild(headRow);
-  table.appendChild(thead);
-  const tbody=document.createElement('tbody');
-  filtered.forEach(row=>{
-    const index=rows.indexOf(row);
-    const tr=document.createElement('tr');
-    headers.forEach(h=>{
-      const td=document.createElement('td');
-      td.textContent=row[h] ?? '';
-      tr.appendChild(td);
-    });
-    const td=document.createElement('td');
-    const edit=document.createElement('button');
-    edit.className='secondary';
-    edit.textContent='تعديل';
-    edit.onclick=()=>openEditor(index);
-    const del=document.createElement('button');
-    del.className='danger';
-    del.textContent='حذف';
-    del.onclick=()=>deleteRow(index);
-    td.append(edit,del);
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  $('tableArea').replaceChildren(table);
-}
-function openEditor(index=null) {
-  editingIndex=index;
-  $('editorTitle').textContent=index===null?'إضافة صف جديد':'تعديل صف';
-  $('editorFields').replaceChildren();
-  headers.forEach(header=>{
-    const wrap=document.createElement('div');
-    const label=document.createElement('label');
-    label.textContent=header;
-    const input=document.createElement('input');
-    input.name=header;
-    input.value=index===null?'':String(rows[index][header] ?? '');
-    wrap.append(label,input);
-    $('editorFields').appendChild(wrap);
-  });
-  $('editor').classList.remove('hidden');
-}
-function closeEditor() {$('editor').classList.add('hidden');}
-$('editorForm').addEventListener('submit',event=>{
-  event.preventDefault();
-  const obj={};
-  headers.forEach(h=>obj[h]=$('editorForm').elements[h].value);
-  if(editingIndex===null) rows.push(obj);
-  else rows[editingIndex]=obj;
-  closeEditor();
-  applyFilters();
-});
-function deleteRow(index) {
-  if(!confirm('هل تريد حذف هذا الصف؟')) return;
-  rows.splice(index,1);
-  applyFilters();
-}
-function csvText(data) {
-  const matrix=[headers,...data.map(row=>headers.map(h=>row[h] ?? ''))];
-  return '\ufeff'+Papa.unparse(matrix);
-}
-function exportCSV(all) {
-  download(all?'all-data.csv':'filtered-data.csv',
-    csvText(all?rows:filtered),'text/csv;charset=utf-8');
-}
-function exportJSON() {
-  download('dashboard-backup.json',
-    JSON.stringify({headers,rows,settings:getSettings()},null,2),
-    'application/json;charset=utf-8');
-}
-function saveChart(id,name) {
-  if(!charts[id]) return;
-  const a=document.createElement('a');
-  a.href=charts[id].toBase64Image();
-  a.download=name+'.png';
-  a.click();
-}
-function getSettings() {
-  const ids=['dimension','metric','aggregation','chartType','kpi1','kpi2','kpi3','kpi4','chartTitle','topN'];
-  return Object.fromEntries(ids.map(id=>[id,$(id).value]));
-}
-function saveSettings() {
-  try {
-    localStorage.setItem('smartDashboardSettings',JSON.stringify(getSettings()));
-    $('settingsStatus').textContent='تم حفظ الإعدادات على هذا الجهاز.';
-  } catch(e) {
-    $('settingsStatus').textContent='تعذر حفظ الإعدادات في المتصفح.';
-  }
-}
-function readSettings() {
-  try {return JSON.parse(localStorage.getItem('smartDashboardSettings')||'null');}
-  catch(e) {return null;}
-}
-function applySettings(settings) {
-  Object.entries(settings||{}).forEach(([id,value])=>{
-    if($(id) && [...$(id).options].some(o=>o.value===String(value)))
-      $(id).value=String(value);
-  });
-}
-function restoreSettings() {
-  const settings=readSettings();
-  if(!settings) {
-    $('settingsStatus').textContent='لا توجد إعدادات محفوظة.';
-    return;
-  }
-  applySettings(settings);
-  renderKPIs();renderCharts();renderTable();
-  $('settingsStatus').textContent='تم استرجاع الإعدادات.';
-}
-function escapeHTML(value) {
-  return String(value??'').replace(/[&<>"']/g,c=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
-}
-function exportReport() {
-  const kpis=[...$('kpis').children].map(el=>
-    `<div class="kpi"><p>${escapeHTML(el.querySelector('small').textContent)}</p><h2>${escapeHTML(el.querySelector('.value').textContent)}</h2></div>`
-  ).join('');
-  const images=['mainChart','distributionChart'].map(id=>
-    charts[id]?charts[id].toBase64Image():''
-  );
-  const headersHTML=headers.map(h=>`<th>${escapeHTML(h)}</th>`).join('');
-  const tableRows=filtered.slice(0,1000).map(row=>
-    '<tr>'+headers.map(h=>`<td>${escapeHTML(row[h])}</td>`).join('')+'</tr>'
-  ).join('');
-  const html=`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8">
-  <title>تقرير الداشبورد</title><style>
-  body{font-family:Arial,Tahoma;background:#f3f6fb;padding:20px}
-  .kpis,.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-  .kpi,.card{background:white;padding:14px;border-radius:12px;margin:8px}
-  img{width:100%}table{border-collapse:collapse;width:100%;background:white}
-  td,th{padding:7px;border:1px solid #ddd;text-align:right}
-  </style><h1>تقرير Smart Data Dashboard</h1>
-  <p>عدد السجلات: ${filtered.length}</p><div class="kpis">${kpis}</div>
-  <div class="charts"><div class="card"><h3>${escapeHTML($('mainChartTitle').textContent)}</h3><img src="${images[0]}"></div>
-  <div class="card"><h3>${escapeHTML($('distributionTitle').textContent)}</h3><img src="${images[1]}"></div></div>
-  <h2>البيانات المفلترة — أول 1000 صف</h2><table><thead><tr>${headersHTML}</tr></thead><tbody>${tableRows}</tbody></table></html>`;
-  download('dashboard-report.html',html,'text/html;charset=utf-8');
-}
-async function loadSheet() {
-  try {
-    const url=new URL($('sheetUrl').value.trim());
-    if(!url.hostname.includes('docs.google.com'))
-      throw Error('أدخل رابط Google Sheets صحيحًا.');
-    const match=url.pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-    if(!match) throw Error('تعذر تحديد ملف الشيت من الرابط.');
-    const gid=url.searchParams.get('gid') ||
-      ((url.hash.match(/gid=(\d+)/)||[])[1]) || '0';
-    const csvURL=`https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv&gid=${gid}`;
-    $('sheetStatus').textContent='جاري تحميل الشيت...';
-    const response=await fetch(csvURL);
-    if(!response.ok) throw Error('تعذر الوصول. تأكد أن الشيت متاح للعرض.');
-    const text=await response.text();
-    if(/<html|<!doctype/i.test(text))
-      throw Error('قد يكون الشيت خاصًا. جرّب تنزيله CSV ورفعه يدويًا.');
-    parseCSV(text);
-    $('sheetStatus').textContent='تم تحميل الشيت بنجاح.';
-  } catch(error) {
-    $('sheetStatus').textContent=error.message+' وقد تمنع سياسات Google التحميل المباشر.';
-  }
-}
+function load(text){const r=Papa.parse(text.replace(/^\ufeff/,''),{header:true,skipEmptyLines:'greedy',transformHeader:h=>h.trim()});
+ if(!r.data.length)throw Error('الملف فاضي أو شكله مش مفهوم');
+ H=r.meta.fields;R=r.data;detect();init()}
+function go(fn){try{fn();$('st').textContent='تم تحميل '+R.length+' صف'}catch(e){$('st').textContent='خطأ: '+e.message}}
+function rd(f){if(!f)return;$('st').textContent='جاري القراءة...';const r=new FileReader();r.onload=()=>go(()=>load(r.result));r.readAsText(f,'UTF-8')}
+$('file').onchange=e=>rd(e.target.files[0]);
+['dragover','drop'].forEach(e=>$('drop').addEventListener(e,ev=>{ev.preventDefault();if(e==='drop')rd(ev.dataTransfer.files[0])}));
+async function sheet(){try{const u=new URL($('url').value.trim());
+ const m=u.pathname.match(/\/spreadsheets\/d\/([\w-]+)/);if(!u.hostname.includes('google.com')||!m)throw Error('الرابط مش رابط شيت صحيح');
+ const g=u.searchParams.get('gid')||(u.hash.match(/gid=(\d+)/)||[])[1]||'0';
+ $('st').textContent='جاري تحميل الشيت...';
+ const r=await fetch(`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv&gid=${g}`);
+ if(!r.ok)throw Error('الشيت لازم يكون متاح لأي حد معاه الرابط');
+ const t=await r.text();if(/<html/i.test(t))throw Error('الشيت خاص، نزّله CSV وارفعه');
+ go(()=>load(t))}catch(e){$('st').textContent='خطأ: '+e.message}}
+
+function sample(){const hd=['ORDER ID','ORDER CREATED AT','ORDER PICKED AT','ORDER PACKED AT','ORDER SHIPPED AT','ORDER DELIVERED AT','ORDER RETURNED AT','SALES CHANNEL','HUB'],
+ ch=['Noon','Amazon','Shopify','Salla'],hb=['القاهرة','الإسكندرية','العاشر من رمضان'],rows=[hd],
+ f=d=>`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`,
+ rnd=(a,b)=>a+Math.random()*(b-a);
+ for(let i=0;i<300;i++){let d=new Date(2026,8,1+Math.floor(rnd(0,14)),Math.floor(rnd(8,22)),Math.floor(rnd(0,60)));
+  const row=[48000000+i*37,f(d)],add=h=>{d=new Date(+d+h*36e5);return f(d)};
+  const stop=Math.random(),n=stop<.1?1:stop<.2?2:stop<.3?3:stop<.4?4:5;
+  row.push(n>=2?add(rnd(1,10)):'',n>=3?add(rnd(.5,6)):'',n>=4?add(rnd(2,30)):'',n>=5?add(rnd(20,90)):'');
+  row.push(n>=5&&Math.random()<.08?add(rnd(24,100)):'',ch[i%4],hb[i%3]);rows.push(row)}
+ go(()=>load(Papa.unparse(rows)))}
+
+function fill(id,arr,first){const s=$(id);s.replaceChildren();
+ if(first!==undefined){const o=document.createElement('option');o.value='';o.textContent=first;s.appendChild(o)}
+ arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o)})}
+function init(){
+ S=ST.map(s=>({k:s[0],l:s[2],h:H.find(h=>s[1].test(h)&&T[h]==='date')})).filter(s=>s.h);
+ X=EX.map(s=>({k:s[0],l:s[2],h:H.find(h=>s[1].test(h)&&T[h]==='date')})).filter(s=>s.h);
+ MD=S.length?S[0].h:H.find(h=>T[h]==='date')||null;
+ const cats=H.filter(h=>T[h]==='cat'),nums=H.filter(h=>T[h]==='num'),m=getComputedStyle(document.documentElement);
+ Chart.defaults.color=m.getPropertyValue('--mut').trim();Chart.defaults.borderColor=m.getPropertyValue('--line').trim();
+ Chart.defaults.maintainAspectRatio=false;Chart.defaults.font.family="'Segoe UI',Tahoma,sans-serif";
+ fill('fc',cats,'بدون فلتر');fill('fv',[],'كل القيم');fill('cd',cats);fill('cm',nums,'عدد السجلات');
+ ['c4','fw','fvw'].forEach(i=>$(i).classList.toggle('hidden',!cats.length));
+ ['dw','dw2','c2'].forEach(i=>$(i).classList.toggle('hidden',!MD));
+ $('c3').classList.toggle('hidden',S.length<3);
+ $('c1').classList.toggle('hidden',S.length<3&&!cats.length);
+ $('app').classList.remove('hidden');reset()}
+function fillv(){const c=$('fc').value;fill('fv',c?[...new Set(R.map(r=>String(r[c]).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar')):[],'كل القيم')}
+function reset(){$('q').value=$('d1').value=$('d2').value='';$('fc').value='';fillv();apply()}
+['q','d1','d2'].forEach(i=>$(i).oninput=apply);
+$('fc').onchange=()=>{fillv();apply()};$('fv').onchange=apply;
+['cd','cm','ca','ct','cn'].forEach(i=>$(i).onchange=cust);
+
+function apply(){const q=$('q').value.trim().toLowerCase(),a=$('d1').value,b=$('d2').value,c=$('fc').value,v=$('fv').value,
+ A=a?new Date(a+'T00:00'):null,B=b?new Date(b+'T23:59'):null;
+ F=R.filter(r=>{if(c&&v&&String(r[c]).trim()!==v)return false;
+  if(MD&&(A||B)){const d=dt(r,MD);if(!d||(A&&d<A)||(B&&d>B))return false}
+  return !q||H.some(h=>String(r[h]??'').toLowerCase().includes(q))});
+ page=0;draw()}
+function draw(){$('cnt').textContent=F.length+' من '+R.length+' سجل';kpis();charts();table()}
+
+function cnt(h){return F.filter(r=>dt(r,h)).length}
+function gap(a,b){let s=0,n=0;F.forEach(r=>{const x=dt(r,a),y=dt(r,b);if(x&&y&&y>=x){s+=y-x;n++}});return n?s/n/36e5:null}
+function kpis(){const n=F.length,k=[],pc=x=>n?(x/n*100).toFixed(1)+'%':'0%',f=key=>S.find(s=>s.k===key),e=key=>X.find(s=>s.k===key);
+ k.push(['إجمالي الطلبات',nf(n),'--navy']);
+ if(S.length>=3){const d=f('delivered'),sh=f('shipped'),rt=e('returned'),cn=e('cancelled');
+  if(d)k.push(['نسبة التسليم',pc(cnt(d.h)),'--grn']);
+  if(rt)k.push(['نسبة المرتجع',pc(cnt(rt.h)),'--red']);
+  if(cn)k.push(['نسبة الإلغاء',pc(cnt(cn.h)),'--amb']);
+  if(sh){k.push(['متوسط الإنشاء للشحن',fh(gap(S[0].h,sh.h)),'--tea']);
+   k.push(['لسه ما اتشحنش',nf(F.filter(r=>dt(r,S[0].h)&&!dt(r,sh.h)&&!(cn&&dt(r,cn.h))).length),'--amb'])}
+ }else{k.push(['عدد الأعمدة',H.length,'--tea']);
+  const nm=H.find(h=>T[h]==='num');if(nm){const v=F.map(r=>+String(r[nm]).replace(/,/g,'')).filter(isFinite);
+   const t=v.reduce((a,b)=>a+b,0);k.push(['مجموع '+nm,nf(t),'--grn']);k.push(['متوسط '+nm,nf(v.length?t/v.length:0),'--amb'])}}
+ $('kp').innerHTML=k.map(x=>`<div class="k" style="--c:var(${x[2]})"><small>${esc(x[0])}</small><b>${esc(x[1])}</b></div>`).join('')}
+
+function mk(id,cfg){if(C[id])C[id].destroy();C[id]=new Chart($(id),cfg)}
+function charts(){const nl={plugins:{legend:{display:false}}};
+ if(S.length>=3){const v=S.map(s=>cnt(s.h)),tot=v[0]||1;$('t1').textContent='مسار الطلب: كام طلب وصل لكل مرحلة';
+  mk('g1',{type:'bar',data:{labels:S.map((s,i)=>s.l+' ('+(v[i]/tot*100).toFixed(0)+'%)'),datasets:[{data:v,backgroundColor:P}]},options:{indexAxis:'y',...nl}});
+  const pr=[],vl=[];for(let i=1;i<S.length;i++){pr.push(S[i-1].l+' → '+S[i].l);vl.push(gap(S[i-1].h,S[i].h))}
+  mk('g3',{type:'bar',data:{labels:pr,datasets:[{data:vl,backgroundColor:P[1]}]},options:{...nl,scales:{y:{beginAtZero:true,title:{display:true,text:'ساعات'}}}}})}
+ else{const c=H.find(h=>T[h]==='cat');if(c){$('t1').textContent='توزيع السجلات حسب '+c;const m=new Map();
+  F.forEach(r=>{const k=String(r[c]).trim()||'(فارغ)';m.set(k,(m.get(k)||0)+1)});const a=[...m].sort((x,y)=>y[1]-x[1]).slice(0,8);
+  mk('g1',{type:'doughnut',data:{labels:a.map(x=>x[0]),datasets:[{data:a.map(x=>x[1]),backgroundColor:P}]},options:{plugins:{legend:{position:'bottom'}}}})}}
+ if(MD){const m=new Map();F.forEach(r=>{const d=dt(r,MD);if(d){const k=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());m.set(k,(m.get(k)||0)+1)}});
+  const ks=[...m.keys()].sort();
+  mk('g2',{type:'line',data:{labels:ks.map(k=>k.slice(5)),datasets:[{data:ks.map(k=>m.get(k)),borderColor:P[2],backgroundColor:'#1f7a8c22',fill:true,tension:.3}]},options:nl})}
+ cust()}
+function cust(){const d=$('cd').value;if(!d)return;const m=$('cm').value,a=$('ca').value,t=$('ct').value,n=+$('cn').value,g=new Map();
+ F.forEach(r=>{const k=String(r[d]).trim()||'(فارغ)',e=g.get(k)||{s:0,c:0,v:0};e.c++;
+  if(m&&String(r[m]).trim()!==''){const x=+String(r[m]).replace(/,/g,'');if(isFinite(x)){e.s+=x;e.v++}}g.set(k,e)});
+ let z=[...g].map(([k,e])=>[k,a==='count'||!m?e.c:a==='avg'?(e.v?e.s/e.v:0):e.s]).sort((x,y)=>y[1]-x[1]);if(n)z=z.slice(0,n);
+ mk('g4',{type:t,data:{labels:z.map(x=>x[0]),datasets:[{data:z.map(x=>x[1]),backgroundColor:t==='line'?P[2]:z.map((_,i)=>P[i%P.length]),borderColor:P[2],tension:.3}]},options:{plugins:{legend:{display:t==='doughnut',position:'bottom'}}}})}
+
+function so(i){const k=H[i];sort=sort.k===k?{k,d:-sort.d}:{k,d:1};page=0;table()}
+function table(){let d=F;const k=sort.k;
+ if(k){const g=r=>T[k]==='date'?+dt(r,k)||0:T[k]==='num'?+String(r[k]).replace(/,/g,'')||0:String(r[k]??'');
+  d=[...F].sort((a,b)=>(g(a)>g(b)?1:g(a)<g(b)?-1:0)*sort.d)}
+ const per=50,pages=Math.max(1,Math.ceil(d.length/per));page=Math.min(page,pages-1);
+ $('tw').innerHTML='<table><thead><tr>'+H.map((h,i)=>`<th onclick="so(${i})">${esc(h)}${k===h?(sort.d>0?' ▲':' ▼'):''}</th>`).join('')+'</tr></thead><tbody>'+
+  d.slice(page*per,page*per+per).map(r=>'<tr>'+H.map(h=>`<td>${esc(r[h])}</td>`).join('')+'</tr>').join('')+'</tbody></table>';
+ $('pg').innerHTML=`<button class="s" ${page?'':'disabled'} onclick="page--;table()">السابق</button><span class="mut">صفحة ${page+1} من ${pages}</span><button class="s" ${page<pages-1?'':'disabled'} onclick="page++;table()">التالي</button>`}
+function exp(all){const d=all?R:F,a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob(['\ufeff'+Papa.unparse({fields:H,data:d.map(r=>H.map(h=>r[h]))})],{type:'text/csv;charset=utf-8'}));
+ a.download=all?'all-data.csv':'filtered-data.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 </script>
 </body>
 </html>
