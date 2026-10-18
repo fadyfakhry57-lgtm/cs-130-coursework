@@ -3,212 +3,296 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>لوحة متابعة الطلبات</title>
+<title>Dashboard Pro</title>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
-:root{--bg:#eceff3;--card:#fff;--ink:#14213d;--mut:#5b6678;--line:#d9dfe7;--navy:#14213d;--amb:#f2a900;--grn:#1b9a6c;--red:#d64545;--tea:#1f7a8c}
-@media(prefers-color-scheme:dark){:root{--bg:#0e1522;--card:#172033;--ink:#e8edf6;--mut:#9aa7bb;--line:#2a3750}}
+:root{--bg:#eceff3;--card:#fff;--ink:#14213d;--mut:#5b6678;--line:#d9dfe7;--amb:#f2a900;--grn:#1b9a6c;--red:#d64545;--tea:#1f7a8c}
+[data-theme=dark]{--bg:#0e1522;--card:#172033;--ink:#e8edf6;--mut:#9aa7bb;--line:#2a3750}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'Segoe UI',Tahoma,system-ui,sans-serif}
-header{background:var(--navy);color:#fff;padding:20px 16px 26px;border-bottom:8px solid var(--amb);border-image:repeating-linear-gradient(135deg,#f2a900 0 14px,#14213d 14px 28px) 8}
+header{background:#14213d;color:#fff;padding:14px 16px 20px;border-bottom:8px solid var(--amb);border-image:repeating-linear-gradient(135deg,#f2a900 0 14px,#14213d 14px 28px) 8}
+.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 header h1{margin:0;font-size:22px}
 header p{margin:4px 0 0;font-size:13px;opacity:.8}
+header button{background:#ffffff26;padding:7px 12px}
 main{max-width:1280px;margin:14px auto 40px;padding:0 12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
-.card h3{margin:0 0 8px;font-size:15px}
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+h3,h4{margin:0 0 8px;font-size:15px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
 label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:3px}
 input,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
-button{border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;background:var(--navy);color:#fff}
+input[type=checkbox]{width:auto}
+button{border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;background:#14213d;color:#fff}
 button.s{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
-button:focus-visible,input:focus-visible,select:focus-visible,.drop:focus-within{outline:3px solid var(--amb);outline-offset:1px}
+button:disabled{opacity:.4}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--amb);outline-offset:1px}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
 .mut{color:var(--mut);font-size:13px}
-.drop{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border:2px dashed var(--line);border-radius:10px;padding:18px;cursor:pointer;text-align:center}
-.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
-@media(min-width:820px){.kpis{grid-template-columns:repeat(6,1fr)}.grid{grid-template-columns:1fr 1fr!important}}
-.k{background:var(--card);border:1px solid var(--line);border-inline-start:5px solid var(--c,var(--navy));border-radius:10px;padding:10px 12px}
+.drop{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border:2px dashed var(--line);border-radius:10px;padding:18px;cursor:pointer;text-align:center;font-size:15px;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+.k{background:var(--card);border:1px solid var(--line);border-inline-start:5px solid var(--c);border-radius:10px;padding:10px 12px}
 .k small{color:var(--mut);display:block;font-size:12px}
-.k b{font-size:24px;line-height:1.3;overflow-wrap:anywhere}
-.grid{display:grid;grid-template-columns:1fr;gap:12px}
-.ch{height:280px;position:relative}
+.k b{font-size:23px;line-height:1.3;overflow-wrap:anywhere}
+#cards{display:grid;grid-template-columns:1fr;gap:12px}
+#k_table,#k_custom{grid-column:1/-1}
+@media(min-width:820px){.kpis{grid-template-columns:repeat(4,1fr)}#cards{grid-template-columns:1fr 1fr}}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.hd h3{margin:0}
+.ty{width:auto;padding:4px 6px;font-size:12px}
+.ch{height:270px;position:relative}
 .tw{overflow:auto;max-height:520px}
 table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
-th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:start}
 th{background:var(--bg);position:sticky;top:0;cursor:pointer}
+.md{position:fixed;inset:0;background:#0009;z-index:9;display:flex;align-items:center;justify-content:center;padding:12px}
+.mb{background:var(--card);border-radius:12px;padding:16px;width:min(640px,100%);max-height:90vh;overflow:auto}
+.li{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.ck{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:400;color:var(--ink)}
 .hidden{display:none!important}
-@media print{header button,.bar button,.drop,.tw{display:none}}
+@media print{header button,.bar button,.drop,.tw,.ty{display:none}}
 </style>
 </head>
 <body>
 <header>
-<h1>لوحة متابعة الطلبات</h1>
-<p>ارفع ملف الطلبات وهتشوف نسب التسليم وسرعة التجهيز والطلبات المتأخرة جاهزة.</p>
+<div class="top"><h1 id="h1">Dashboard Pro</h1>
+<div><button onclick="panel()" data-i="custom"></button> <button id="tb" onclick="tt()"></button> <button id="lb" onclick="tl()"></button></div></div>
+<p data-i="sub"></p>
 </header>
 <main>
 <section class="card"><div class="row">
-<label class="drop" id="drop"><input type="file" id="file" accept=".csv,text/csv" hidden><b>اختار ملف CSV</b><small class="mut" id="st">أو اسحب الملف هنا</small></label>
-<div><label for="url">رابط Google Sheets (اختياري)</label><input id="url" placeholder="الصق الرابط هنا"><div class="bar"><button onclick="sheet()">تحميل الشيت</button><button class="s" onclick="sample()">جرّب بيانات مثال</button></div></div>
+<label class="drop"><input type="file" id="file" accept=".csv,text/csv" hidden><b data-i="file"></b><small class="mut" id="st" data-i="drag"></small></label>
+<div><label for="url" data-i="url"></label><input id="url" data-p="ph_url"><div class="bar"><button onclick="sheet()" data-i="ls"></button><button class="s" onclick="sample()" data-i="sample"></button></div></div>
 </div></section>
 
 <div id="app" class="hidden">
-<section class="card"><div class="row">
-<div><label for="q">بحث</label><input id="q" placeholder="اكتب أي كلمة"></div>
-<div id="dw"><label for="d1">من تاريخ</label><input type="date" id="d1"></div>
-<div id="dw2"><label for="d2">إلى تاريخ</label><input type="date" id="d2"></div>
-<div id="fw"><label for="fc">فلتر حسب</label><select id="fc"></select></div>
-<div id="fvw"><label for="fv">القيمة</label><select id="fv"></select></div>
+<section class="card" style="margin-top:12px"><div class="row">
+<div><label for="q" data-i="search"></label><input id="q" data-p="ph_q"></div>
+<div id="dw"><label for="d1" data-i="from"></label><input type="date" id="d1"></div>
+<div id="dw2"><label for="d2" data-i="to"></label><input type="date" id="d2"></div>
+<div id="fw"><label for="fc" data-i="filter"></label><select id="fc"></select></div>
+<div id="fvw"><label for="fv" data-i="value"></label><select id="fv"></select></div>
 </div>
-<div class="bar"><span id="cnt" class="mut"></span><button class="s" onclick="reset()">مسح الفلاتر</button></div></section>
+<div class="bar"><span id="cnt" class="mut"></span><button class="s" onclick="reset()" data-i="clear"></button></div></section>
 
 <div class="kpis" id="kp"></div>
 
-<div class="grid">
-<div class="card" id="c1"><h3 id="t1"></h3><div class="ch"><canvas id="g1"></canvas></div></div>
-<div class="card" id="c2"><h3>عدد الطلبات كل يوم</h3><div class="ch"><canvas id="g2"></canvas></div></div>
-<div class="card" id="c3"><h3>متوسط الوقت بين المراحل (بالساعات)</h3><div class="ch"><canvas id="g3"></canvas></div></div>
-<div class="card" id="c4"><h3>رسم حسب اختيارك</h3>
-<div class="row"><div><label for="cd">التصنيف</label><select id="cd"></select></div><div><label for="cm">الرقم</label><select id="cm"></select></div>
-<div><label for="ca">الحساب</label><select id="ca"><option value="sum">المجموع</option><option value="avg">المتوسط</option><option value="count">العدد</option></select></div>
-<div><label for="ct">الشكل</label><select id="ct"><option value="bar">أعمدة</option><option value="line">خط</option><option value="doughnut">دائري</option></select></div>
-<div><label for="cn">عدد التصنيفات</label><select id="cn"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="0">الكل</option></select></div></div>
-<div class="ch" style="margin-top:10px"><canvas id="g4"></canvas></div></div>
+<div id="cards">
+<div class="card" id="k_custom"><h3 data-i="c_custom"></h3>
+<div class="row"><div><label for="cd" data-i="cat"></label><select id="cd"></select></div><div><label for="cm" data-i="num"></label><select id="cm"></select></div>
+<div><label for="ca" data-i="calc"></label><select id="ca"><option value="sum" data-i="sum"></option><option value="avg" data-i="avg"></option><option value="count" data-i="count"></option></select></div>
+<div><label for="ct" data-i="shape"></label><select id="ct"><option value="bar" data-i="bar"></option><option value="line" data-i="line"></option><option value="pie" data-i="pie"></option></select></div>
+<div><label for="cn" data-i="top"></label><select id="cn"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="0" data-i="all2"></option></select></div></div>
+<div class="ch" style="margin-top:10px"><canvas id="g_custom"></canvas></div></div>
+<div class="card" id="k_table"><h3 data-i="c_table"></h3>
+<div class="bar" style="justify-content:flex-start;margin:0 0 8px"><button onclick="ed(-1)" data-i="add"></button><button class="s" onclick="exp(0)" data-i="e1"></button><button class="s" onclick="exp(1)" data-i="e2"></button><button class="s" onclick="window.print()" data-i="pr"></button></div>
+<div class="tw" id="tw"></div><div class="bar" id="pg"></div></div>
 </div>
-
-<section class="card"><h3>البيانات</h3>
-<div class="bar" style="justify-content:flex-start;margin:0 0 8px"><button onclick="exp(0)">تصدير النتائج CSV</button><button class="s" onclick="exp(1)">تصدير الكل CSV</button><button class="s" onclick="window.print()">طباعة / PDF</button></div>
-<div class="tw" id="tw"></div><div class="bar" id="pg"></div></section>
 </div>
 </main>
+<div id="md" class="md hidden"><div class="mb" id="mc"></div></div>
 
 <script>
 const $=i=>document.getElementById(i),p=n=>String(n).padStart(2,'0'),
-P=['#14213d','#f2a900','#1f7a8c','#1b9a6c','#d64545','#7b5ea7','#84a98c','#e07a5f'],
-ST=[['created',/^order created/i,'إنشاء الطلب'],['picked',/picked/i,'الالتقاط'],['packed',/packed/i,'التعبئة'],['shipped',/^order shipped/i,'الشحن'],['delivered',/delivered/i,'التسليم']],
-EX=[['returned',/^order returned/i,'مرتجع'],['cancelled',/cancel/i,'ملغي']];
-let H=[],R=[],F=[],T={},S=[],X=[],MD=null,C={},sort={k:null,d:1},page=0;
+PC=['#1f7a8c','#f2a900','#1b9a6c','#d64545','#7b5ea7','#84a98c','#e07a5f','#4c78a8'],
+ST=[['created',/^order created/i],['picked',/picked/i],['packed',/packed/i],['shipped',/^order shipped/i],['delivered',/delivered/i]],
+EX=[['returned',/^order returned/i],['cancelled',/cancel/i]],
+L={ar:{sub:'ارفع ملف الطلبات وشوف كل التفاصيل جاهزة: التسليم، السرعة، التأخير.',custom:'تخصيص',file:'اختار ملف CSV',drag:'أو اسحب الملف هنا',url:'رابط Google Sheets (اختياري)',ph_url:'الصق الرابط هنا',ls:'تحميل الشيت',sample:'جرّب بيانات مثال',search:'بحث',ph_q:'اكتب أي كلمة',from:'من تاريخ',to:'إلى تاريخ',filter:'فلتر حسب',value:'القيمة',none:'بدون فلتر',all:'كل القيم',clear:'مسح الفلاتر',rows:'سجل',of:'من',
+k_total:'إجمالي الطلبات',k_delivered:'نسبة التسليم',k_returned:'نسبة المرتجع',k_cancelled:'نسبة الإلغاء',k_c2s:'متوسط الإنشاء للشحن',k_cycle:'متوسط الإنشاء للتسليم',k_open:'لسه ما اتشحنش',k_sla:'نسبة التأخير',k_cols:'عدد الأعمدة',k_sum:'مجموع',k_avg:'متوسط',hr:'ساعة',day:'يوم',h:'س',
+c_funnel:'مسار الطلب: كام طلب وصل لكل مرحلة',c_daily:'الطلبات كل يوم',c_stage:'متوسط الوقت بين المراحل',c_aging:'عمر الطلبات اللي لسه ما اتشحنتش (ساعات)',c_cycle:'توزيع وقت الإنشاء للشحن (ساعات)',c_hour:'الطلبات حسب ساعة اليوم',c_wday:'الطلبات حسب يوم الأسبوع',c_custom:'رسم حسب اختيارك',c_table:'البيانات',
+s_created:'إنشاء',s_picked:'التقاط',s_packed:'تعبئة',s_shipped:'شحن',s_delivered:'تسليم',s_orders:'السجلات',orders:'الطلبات',open:'مفتوحة',hours:'ساعات',
+cat:'التصنيف',num:'الرقم',calc:'الحساب',shape:'الشكل',top:'عدد التصنيفات',sum:'المجموع',avg:'المتوسط',count:'العدد',bar:'أعمدة',hbar:'أعمدة أفقية',line:'خط',pie:'دائري',rowcnt:'عدد السجلات',all2:'الكل',
+name:'اسم الداشبورد',sla:'حد التأخير في الشحن (ساعات)',cards:'الرسومات والأقسام (أظهر / أخفي / رتّب)',kpis:'الأرقام الرئيسية',reset:'رجوع للافتراضي',done:'تم',add:'إضافة صف',edit:'تعديل',save:'حفظ',cancel:'إلغاء',del:'حذف',sure:'متأكد من الحذف؟',e1:'تصدير النتائج CSV',e2:'تصدير الكل CSV',pr:'طباعة / PDF',prev:'السابق',next:'التالي',page:'صفحة',loaded:'تم تحميل',reading:'جاري القراءة...',err:'خطأ',e_empty:'الملف فاضي أو مش مفهوم',e_url:'الرابط مش رابط شيت صحيح',e_pub:'الشيت لازم يكون متاح لأي حد معاه الرابط',e_priv:'الشيت خاص، نزّله CSV وارفعه',empty:'(فارغ)',
+days:['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']},
+en:{sub:'Upload your orders file and get every detail ready: delivery, speed, delays.',custom:'Customize',file:'Choose CSV file',drag:'or drag the file here',url:'Google Sheets link (optional)',ph_url:'Paste the link here',ls:'Load sheet',sample:'Try sample data',search:'Search',ph_q:'Type any word',from:'From date',to:'To date',filter:'Filter by',value:'Value',none:'No filter',all:'All values',clear:'Clear filters',rows:'records',of:'of',
+k_total:'Total orders',k_delivered:'Delivery rate',k_returned:'Return rate',k_cancelled:'Cancel rate',k_c2s:'Avg create to ship',k_cycle:'Avg create to deliver',k_open:'Not shipped yet',k_sla:'Late rate',k_cols:'Columns',k_sum:'Sum of',k_avg:'Average of',hr:'h',day:'days',h:'h',
+c_funnel:'Order funnel: orders reaching each stage',c_daily:'Orders per day',c_stage:'Average time between stages',c_aging:'Age of orders not shipped yet (hours)',c_cycle:'Create-to-ship time spread (hours)',c_hour:'Orders by hour of day',c_wday:'Orders by weekday',c_custom:'Your own chart',c_table:'Data',
+s_created:'Created',s_picked:'Picked',s_packed:'Packed',s_shipped:'Shipped',s_delivered:'Delivered',s_orders:'Records',orders:'Orders',open:'Open',hours:'Hours',
+cat:'Category',num:'Number',calc:'Calculation',shape:'Shape',top:'Top items',sum:'Sum',avg:'Average',count:'Count',bar:'Bars',hbar:'Horizontal bars',line:'Line',pie:'Doughnut',rowcnt:'Record count',all2:'All',
+name:'Dashboard name',sla:'Shipping delay limit (hours)',cards:'Charts and sections (show / hide / reorder)',kpis:'Key numbers',reset:'Reset to default',done:'Done',add:'Add row',edit:'Edit',save:'Save',cancel:'Cancel',del:'Delete',sure:'Delete this row?',e1:'Export results CSV',e2:'Export all CSV',pr:'Print / PDF',prev:'Previous',next:'Next',page:'Page',loaded:'Loaded',reading:'Reading...',err:'Error',e_empty:'File is empty or unreadable',e_url:'Not a valid Google Sheets link',e_pub:'Sheet must be viewable by anyone with the link',e_priv:'Sheet is private, download it as CSV and upload',empty:'(empty)',
+days:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']}};
+let H=[],R=[],F=[],T={},S=[],X=[],MD=null,REF=0,C={},sort={k:null,d:1},page=0,KL=[],EI=-1,
+G={title:'Dashboard Pro',sla:24,hide:{},order:[],type:{},hk:{},lang:'ar',theme:null},lang='ar';
+try{Object.assign(G,JSON.parse(localStorage.getItem('dp')||'{}'))}catch(e){}
+const sv=()=>{try{localStorage.setItem('dp',JSON.stringify(G))}catch(e){}},t=k=>L[lang][k]??k,
+esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
+nf=n=>Number(n||0).toLocaleString('en-US',{maximumFractionDigits:1}),
+fh=h=>h==null?'—':h<48?h.toFixed(1)+' '+t('hr'):(h/24).toFixed(1)+' '+t('day'),
+dk=d=>d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()),
+sh=()=>S.find(x=>x.k==='shipped');
 
 function pd(v){v=String(v||'').trim();let m=v.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/);
  if(m)return new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0));
  m=v.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})(?:[ T](\d{1,2}):(\d{2}))?/);
  return m?new Date(+m[3],m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)):null}
 function dt(r,h){const c=r._d||(r._d={});return h in c?c[h]:(c[h]=pd(r[h]))}
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const nf=n=>Number(n||0).toLocaleString('en-US',{maximumFractionDigits:1});
-const fh=h=>h==null?'—':h<48?h.toFixed(1)+' ساعة':(h/24).toFixed(1)+' يوم';
+function cnt(h){return F.filter(r=>dt(r,h)).length}
+function gap(a,b){let s=0,n=0;F.forEach(r=>{const x=dt(r,a),y=dt(r,b);if(x&&y&&y>=x){s+=y-x;n++}});return n?s/n/36e5:null}
 
+/* ---------- theme / language ---------- */
+function theme(m){document.documentElement.dataset.theme=m;const s=getComputedStyle(document.documentElement);
+ Chart.defaults.color=s.getPropertyValue('--mut').trim();Chart.defaults.borderColor=s.getPropertyValue('--line').trim();$('tb').textContent=m==='dark'?'☀':'🌙'}
+function tt(){G.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';theme(G.theme);sv();if(R.length)charts()}
+function ttl(){$('h1').textContent=G.title;document.title=G.title}
+function al(){const d=document.documentElement;d.lang=lang;d.dir=lang==='ar'?'rtl':'ltr';
+ document.querySelectorAll('[data-i]').forEach(e=>e.textContent=t(e.dataset.i));
+ document.querySelectorAll('[data-p]').forEach(e=>e.placeholder=t(e.dataset.p));
+ [['fc','none'],['fv','all'],['cm','rowcnt']].forEach(([i,k])=>{const o=$(i).options[0];if(o&&o.value==='')o.textContent=t(k)});
+ $('lb').textContent=lang==='ar'?'EN':'ع';ttl()}
+function tl(){lang=lang==='ar'?'en':'ar';G.lang=lang;sv();cl();al();if(R.length)draw()}
+
+/* ---------- loading data ---------- */
 function detect(){T={};const s=R.slice(0,5000);
  H.forEach(h=>{const v=s.map(r=>String(r[h]??'').trim()).filter(Boolean);
   if(!v.length){T[h]='empty';return}
   const u=new Set(v).size;
   if(v.filter(x=>pd(x)).length/v.length>.8)T[h]='date';
   else if(/(^|[\s_-])(id|reference|ref|code|sku|barcode|phone|awb|tracking)([\s_-]|$)/i.test(h))T[h]='id';
-  else if(v.filter(x=>isFinite(+x.replace(/,/g,''))).length/v.length>.8)T[h]=v.every(x=>/^\d+$/.test(x))&&u>.95*v.length&&v.length>20?'id':'num';
+  else if(v.filter(x=>isFinite(+x.replace(/,/g,''))).length/v.length>.8)T[h]=(v.every(x=>/^\d+$/.test(x))&&u>.95*v.length&&v.length>20)?'id':'num';
   else T[h]=u<=40&&v.length/s.length>.3?'cat':'text'})}
-
 function load(text){const r=Papa.parse(text.replace(/^\ufeff/,''),{header:true,skipEmptyLines:'greedy',transformHeader:h=>h.trim()});
- if(!r.data.length)throw Error('الملف فاضي أو شكله مش مفهوم');
+ if(!r.data.length)throw Error(t('e_empty'));
  H=r.meta.fields;R=r.data;detect();init()}
-function go(fn){try{fn();$('st').textContent='تم تحميل '+R.length+' صف'}catch(e){$('st').textContent='خطأ: '+e.message}}
-function rd(f){if(!f)return;$('st').textContent='جاري القراءة...';const r=new FileReader();r.onload=()=>go(()=>load(r.result));r.readAsText(f,'UTF-8')}
+function go(fn){try{fn();$('st').textContent=t('loaded')+' '+R.length+' '+t('rows')}catch(e){$('st').textContent=t('err')+': '+e.message}}
+function rd(f){if(!f)return;$('st').textContent=t('reading');const r=new FileReader();r.onload=()=>go(()=>load(r.result));r.readAsText(f,'UTF-8')}
 $('file').onchange=e=>rd(e.target.files[0]);
-['dragover','drop'].forEach(e=>$('drop').addEventListener(e,ev=>{ev.preventDefault();if(e==='drop')rd(ev.dataTransfer.files[0])}));
-async function sheet(){try{const u=new URL($('url').value.trim());
- const m=u.pathname.match(/\/spreadsheets\/d\/([\w-]+)/);if(!u.hostname.includes('google.com')||!m)throw Error('الرابط مش رابط شيت صحيح');
+['dragover','drop'].forEach(e=>document.querySelector('.drop').addEventListener(e,ev=>{ev.preventDefault();if(e==='drop')rd(ev.dataTransfer.files[0])}));
+async function sheet(){try{const u=new URL($('url').value.trim()),m=u.pathname.match(/\/spreadsheets\/d\/([\w-]+)/);
+ if(!u.hostname.includes('google.com')||!m)throw Error(t('e_url'));
  const g=u.searchParams.get('gid')||(u.hash.match(/gid=(\d+)/)||[])[1]||'0';
- $('st').textContent='جاري تحميل الشيت...';
+ $('st').textContent=t('reading');
  const r=await fetch(`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv&gid=${g}`);
- if(!r.ok)throw Error('الشيت لازم يكون متاح لأي حد معاه الرابط');
- const t=await r.text();if(/<html/i.test(t))throw Error('الشيت خاص، نزّله CSV وارفعه');
- go(()=>load(t))}catch(e){$('st').textContent='خطأ: '+e.message}}
-
+ if(!r.ok)throw Error(t('e_pub'));
+ const x=await r.text();if(/<html/i.test(x))throw Error(t('e_priv'));
+ go(()=>load(x))}catch(e){$('st').textContent=t('err')+': '+e.message}}
 function sample(){const hd=['ORDER ID','ORDER CREATED AT','ORDER PICKED AT','ORDER PACKED AT','ORDER SHIPPED AT','ORDER DELIVERED AT','ORDER RETURNED AT','SALES CHANNEL','HUB'],
- ch=['Noon','Amazon','Shopify','Salla'],hb=['القاهرة','الإسكندرية','العاشر من رمضان'],rows=[hd],
- f=d=>`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`,
- rnd=(a,b)=>a+Math.random()*(b-a);
- for(let i=0;i<300;i++){let d=new Date(2026,8,1+Math.floor(rnd(0,14)),Math.floor(rnd(8,22)),Math.floor(rnd(0,60)));
-  const row=[48000000+i*37,f(d)],add=h=>{d=new Date(+d+h*36e5);return f(d)};
-  const stop=Math.random(),n=stop<.1?1:stop<.2?2:stop<.3?3:stop<.4?4:5;
-  row.push(n>=2?add(rnd(1,10)):'',n>=3?add(rnd(.5,6)):'',n>=4?add(rnd(2,30)):'',n>=5?add(rnd(20,90)):'');
+ ch=['Noon','Amazon','Shopify','Salla'],hb=['Cairo','Alexandria','10th of Ramadan'],rows=[hd],
+ f=d=>`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`,rnd=(a,b)=>a+Math.random()*(b-a);
+ for(let i=0;i<400;i++){let d=new Date(2026,8,1+Math.floor(rnd(0,14)),Math.floor(rnd(8,22)),Math.floor(rnd(0,60)));
+  const row=[48000000+i*37,f(d)],add=h=>{d=new Date(+d+h*36e5);return f(d)},z=Math.random(),n=z<.1?1:z<.2?2:z<.3?3:z<.4?4:5;
+  row.push(n>=2?add(rnd(1,10)):'',n>=3?add(rnd(.5,6)):'',n>=4?add(rnd(2,40)):'',n>=5?add(rnd(20,90)):'');
   row.push(n>=5&&Math.random()<.08?add(rnd(24,100)):'',ch[i%4],hb[i%3]);rows.push(row)}
  go(()=>load(Papa.unparse(rows)))}
 
+/* ---------- charts definitions ---------- */
+const CH=[
+['funnel','hbar','S',()=>{const v=S.map(s=>cnt(s.h)),a=v[0]||1;return{l:S.map((s,i)=>t('s_'+s.k)+' ('+Math.round(v[i]/a*100)+'%)'),ds:[{n:t('orders'),v}]}}],
+['daily','line','D',()=>{const cs=S.length?S.filter(s=>['created','shipped','delivered'].includes(s.k)):[{k:'orders',h:MD}],m=new Map();
+ cs.forEach((c,j)=>F.forEach(r=>{const d=dt(r,c.h);if(d){const k=dk(d),a=m.get(k)||[];a[j]=(a[j]||0)+1;m.set(k,a)}}));
+ const ks=[...m.keys()].sort();return{l:ks.map(k=>k.slice(5)),ds:cs.map((c,j)=>({n:t('s_'+c.k),v:ks.map(k=>m.get(k)[j]||0)}))}}],
+['stage','bar','S',()=>{const l=[],v=[];for(let i=1;i<S.length;i++){l.push(t('s_'+S[i-1].k)+' → '+t('s_'+S[i].k));v.push(+(gap(S[i-1].h,S[i].h)||0).toFixed(1))}return{l,ds:[{n:t('hours'),v}]}}],
+['aging','bar','SH',()=>{const s=sh(),c=X.find(x=>x.k==='cancelled'),b=[0,0,0,0];
+ F.forEach(r=>{const x=dt(r,S[0].h);if(!x||dt(r,s.h)||(c&&dt(r,c.h)))return;const h=(REF-x)/36e5;b[h<24?0:h<48?1:h<72?2:3]++});
+ return{l:['<24','24–48','48–72','72+'],ds:[{n:t('open'),v:b}]}}],
+['cycle','bar','SH',()=>{const s=sh(),b=[0,0,0,0,0];
+ F.forEach(r=>{const x=dt(r,S[0].h),y=dt(r,s.h);if(x&&y&&y>=x){const h=(y-x)/36e5;b[h<6?0:h<12?1:h<24?2:h<48?3:4]++}});
+ return{l:['<6','6–12','12–24','24–48','48+'],ds:[{n:t('orders'),v:b}]}}],
+['hour','bar','D',()=>{const a=Array(24).fill(0);F.forEach(r=>{const d=dt(r,MD);if(d)a[d.getHours()]++});return{l:a.map((_,i)=>p(i)),ds:[{n:t('orders'),v:a}]}}],
+['wday','bar','D',()=>{const a=Array(7).fill(0);F.forEach(r=>{const d=dt(r,MD);if(d)a[d.getDay()]++});return{l:t('days'),ds:[{n:t('orders'),v:a}]}}]
+],ID=[...CH.map(c=>c[0]),'custom','table'];
+CH.forEach(c=>{const d=document.createElement('div');d.className='card';d.id='k_'+c[0];
+ d.innerHTML=`<div class="hd"><h3 data-i="c_${c[0]}"></h3><select class="ty" onchange="G.type['${c[0]}']=this.value;sv();rc('${c[0]}')">${['bar','hbar','line','pie'].map(x=>`<option value="${x}" ${x===(G.type[c[0]]||c[1])?'selected':''} data-i="${x}"></option>`).join('')}</select></div><div class="ch"><canvas id="g_${c[0]}"></canvas></div>`;
+ $('cards').appendChild(d)});
+
+function avail(id){if(!R.length)return false;const c=CH.find(x=>x[0]===id);
+ if(!c)return id==='table'||H.some(h=>T[h]==='cat');
+ return c[2]==='D'?!!MD:c[2]==='S'?S.length>=3:S.length>=3&&!!sh()}
+function layout(){G.order=[...G.order.filter(x=>ID.includes(x)),...ID.filter(x=>!G.order.includes(x))];
+ G.order.forEach((id,i)=>{const e=$('k_'+id);e.style.order=i;e.classList.toggle('hidden',!!G.hide[id]||!avail(id))})}
+function mk(id,cfg){if(C[id])C[id].destroy();C[id]=new Chart($(id),cfg)}
+function rc(id){const c=CH.find(x=>x[0]===id);if(!c||$('k_'+id).classList.contains('hidden'))return;
+ const ty=G.type[id]||c[1],pie=ty==='pie',d=c[3](),multi=d.ds.length>1;
+ mk('g_'+id,{type:pie?'doughnut':ty==='hbar'?'bar':ty,
+  data:{labels:d.l,datasets:d.ds.map((s,j)=>({label:s.n,data:s.v,backgroundColor:pie?PC:ty==='line'?PC[j]+'33':PC[j],borderColor:PC[j],fill:ty==='line'&&!multi,tension:.3}))},
+  options:{maintainAspectRatio:false,indexAxis:ty==='hbar'?'y':'x',plugins:{legend:{display:pie||multi,position:'bottom'}},scales:pie?{}:{y:{beginAtZero:true}}}})}
+function charts(){CH.forEach(c=>rc(c[0]));cust()}
+function cust(){const d=$('cd').value;if(!d||$('k_custom').classList.contains('hidden'))return;
+ const m=$('cm').value,a=$('ca').value,ty=$('ct').value,n=+$('cn').value,g=new Map();
+ F.forEach(r=>{const k=String(r[d]).trim()||t('empty'),e=g.get(k)||{s:0,c:0,v:0};e.c++;
+  if(m&&String(r[m]).trim()!==''){const x=+String(r[m]).replace(/,/g,'');if(isFinite(x)){e.s+=x;e.v++}}g.set(k,e)});
+ let z=[...g].map(([k,e])=>[k,a==='count'||!m?e.c:a==='avg'?(e.v?e.s/e.v:0):e.s]).sort((x,y)=>y[1]-x[1]);if(n)z=z.slice(0,n);
+ const pie=ty==='pie';
+ mk('g_custom',{type:pie?'doughnut':ty,data:{labels:z.map(x=>x[0]),datasets:[{data:z.map(x=>+x[1].toFixed(2)),backgroundColor:pie?PC:ty==='line'?PC[0]+'33':PC[0],borderColor:PC[0],fill:ty==='line',tension:.3}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:pie,position:'bottom'}}}})}
+
+/* ---------- init / filters ---------- */
 function fill(id,arr,first){const s=$(id);s.replaceChildren();
  if(first!==undefined){const o=document.createElement('option');o.value='';o.textContent=first;s.appendChild(o)}
  arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o)})}
-function init(){
- S=ST.map(s=>({k:s[0],l:s[2],h:H.find(h=>s[1].test(h)&&T[h]==='date')})).filter(s=>s.h);
- X=EX.map(s=>({k:s[0],l:s[2],h:H.find(h=>s[1].test(h)&&T[h]==='date')})).filter(s=>s.h);
- MD=S.length?S[0].h:H.find(h=>T[h]==='date')||null;
- const cats=H.filter(h=>T[h]==='cat'),nums=H.filter(h=>T[h]==='num'),m=getComputedStyle(document.documentElement);
- Chart.defaults.color=m.getPropertyValue('--mut').trim();Chart.defaults.borderColor=m.getPropertyValue('--line').trim();
- Chart.defaults.maintainAspectRatio=false;Chart.defaults.font.family="'Segoe UI',Tahoma,sans-serif";
- fill('fc',cats,'بدون فلتر');fill('fv',[],'كل القيم');fill('cd',cats);fill('cm',nums,'عدد السجلات');
- ['c4','fw','fvw'].forEach(i=>$(i).classList.toggle('hidden',!cats.length));
- ['dw','dw2','c2'].forEach(i=>$(i).classList.toggle('hidden',!MD));
- $('c3').classList.toggle('hidden',S.length<3);
- $('c1').classList.toggle('hidden',S.length<3&&!cats.length);
- $('app').classList.remove('hidden');reset()}
-function fillv(){const c=$('fc').value;fill('fv',c?[...new Set(R.map(r=>String(r[c]).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar')):[],'كل القيم')}
+function init(){const mp=a=>a.map(s=>({k:s[0],h:H.find(h=>s[1].test(h)&&T[h]==='date')})).filter(s=>s.h);
+ S=mp(ST);X=mp(EX);MD=S.length?S[0].h:H.find(h=>T[h]==='date')||null;REF=0;
+ H.filter(h=>T[h]==='date').forEach(h=>R.forEach(r=>{const d=dt(r,h);if(d&&+d>REF)REF=+d}));
+ const cats=H.filter(h=>T[h]==='cat'),nums=H.filter(h=>T[h]==='num');
+ fill('fc',cats,t('none'));fill('fv',[],t('all'));fill('cd',cats);fill('cm',nums,t('rowcnt'));
+ ['fw','fvw'].forEach(i=>$(i).classList.toggle('hidden',!cats.length));
+ ['dw','dw2'].forEach(i=>$(i).classList.toggle('hidden',!MD));
+ $('app').classList.remove('hidden');layout();reset()}
+function fillv(){const c=$('fc').value;fill('fv',c?[...new Set(R.map(r=>String(r[c]).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)):[],t('all'))}
 function reset(){$('q').value=$('d1').value=$('d2').value='';$('fc').value='';fillv();apply()}
 ['q','d1','d2'].forEach(i=>$(i).oninput=apply);
 $('fc').onchange=()=>{fillv();apply()};$('fv').onchange=apply;
 ['cd','cm','ca','ct','cn'].forEach(i=>$(i).onchange=cust);
-
 function apply(){const q=$('q').value.trim().toLowerCase(),a=$('d1').value,b=$('d2').value,c=$('fc').value,v=$('fv').value,
  A=a?new Date(a+'T00:00'):null,B=b?new Date(b+'T23:59'):null;
  F=R.filter(r=>{if(c&&v&&String(r[c]).trim()!==v)return false;
   if(MD&&(A||B)){const d=dt(r,MD);if(!d||(A&&d<A)||(B&&d>B))return false}
   return !q||H.some(h=>String(r[h]??'').toLowerCase().includes(q))});
  page=0;draw()}
-function draw(){$('cnt').textContent=F.length+' من '+R.length+' سجل';kpis();charts();table()}
+function draw(){$('cnt').textContent=F.length+' '+t('of')+' '+R.length+' '+t('rows');kpis();charts();table()}
 
-function cnt(h){return F.filter(r=>dt(r,h)).length}
-function gap(a,b){let s=0,n=0;F.forEach(r=>{const x=dt(r,a),y=dt(r,b);if(x&&y&&y>=x){s+=y-x;n++}});return n?s/n/36e5:null}
-function kpis(){const n=F.length,k=[],pc=x=>n?(x/n*100).toFixed(1)+'%':'0%',f=key=>S.find(s=>s.k===key),e=key=>X.find(s=>s.k===key);
- k.push(['إجمالي الطلبات',nf(n),'--navy']);
- if(S.length>=3){const d=f('delivered'),sh=f('shipped'),rt=e('returned'),cn=e('cancelled');
-  if(d)k.push(['نسبة التسليم',pc(cnt(d.h)),'--grn']);
-  if(rt)k.push(['نسبة المرتجع',pc(cnt(rt.h)),'--red']);
-  if(cn)k.push(['نسبة الإلغاء',pc(cnt(cn.h)),'--amb']);
-  if(sh){k.push(['متوسط الإنشاء للشحن',fh(gap(S[0].h,sh.h)),'--tea']);
-   k.push(['لسه ما اتشحنش',nf(F.filter(r=>dt(r,S[0].h)&&!dt(r,sh.h)&&!(cn&&dt(r,cn.h))).length),'--amb'])}
- }else{k.push(['عدد الأعمدة',H.length,'--tea']);
-  const nm=H.find(h=>T[h]==='num');if(nm){const v=F.map(r=>+String(r[nm]).replace(/,/g,'')).filter(isFinite);
-   const t=v.reduce((a,b)=>a+b,0);k.push(['مجموع '+nm,nf(t),'--grn']);k.push(['متوسط '+nm,nf(v.length?t/v.length:0),'--amb'])}}
- $('kp').innerHTML=k.map(x=>`<div class="k" style="--c:var(${x[2]})"><small>${esc(x[0])}</small><b>${esc(x[1])}</b></div>`).join('')}
+/* ---------- KPIs ---------- */
+function kp(){const n=F.length,pc=x=>n?(x/n*100).toFixed(1)+'%':'0%',o=[['total',nf(n),'--ink']];
+ if(S.length>=3){const d=S.find(x=>x.k==='delivered'),s=sh(),rt=X.find(x=>x.k==='returned'),c=X.find(x=>x.k==='cancelled');
+  if(d)o.push(['delivered',pc(cnt(d.h)),'--grn']);
+  if(rt)o.push(['returned',pc(cnt(rt.h)),'--red']);
+  if(c)o.push(['cancelled',pc(cnt(c.h)),'--amb']);
+  if(s){o.push(['c2s',fh(gap(S[0].h,s.h)),'--tea']);
+   if(d)o.push(['cycle',fh(gap(S[0].h,d.h)),'--tea']);
+   o.push(['open',nf(F.filter(r=>dt(r,S[0].h)&&!dt(r,s.h)&&!(c&&dt(r,c.h))).length),'--amb']);
+   let a=0,b=0;F.forEach(r=>{const x=dt(r,S[0].h),y=dt(r,s.h);if(x&&y&&y>=x){a++;if((y-x)/36e5>G.sla)b++}});
+   o.push(['sla',a?(b/a*100).toFixed(1)+'%':'—','--red','> '+G.sla+' '+t('h')])}
+ }else{o.push(['cols',H.length,'--tea']);const nm=H.find(h=>T[h]==='num');
+  if(nm){const v=F.map(r=>+String(r[nm]).replace(/,/g,'')).filter(isFinite),s=v.reduce((a,b)=>a+b,0);
+   o.push(['sum',nf(s),'--grn',nm],['avg',nf(v.length?s/v.length:0),'--amb',nm])}}
+ return o}
+function kpis(){const o=kp();KL=o.map(x=>x[0]);
+ $('kp').innerHTML=o.filter(x=>!G.hk[x[0]]).map(x=>`<div class="k" style="--c:var(${x[2]})"><small>${esc(t('k_'+x[0])+(x[3]?' '+x[3]:''))}</small><b>${esc(x[1])}</b></div>`).join('')}
 
-function mk(id,cfg){if(C[id])C[id].destroy();C[id]=new Chart($(id),cfg)}
-function charts(){const nl={plugins:{legend:{display:false}}};
- if(S.length>=3){const v=S.map(s=>cnt(s.h)),tot=v[0]||1;$('t1').textContent='مسار الطلب: كام طلب وصل لكل مرحلة';
-  mk('g1',{type:'bar',data:{labels:S.map((s,i)=>s.l+' ('+(v[i]/tot*100).toFixed(0)+'%)'),datasets:[{data:v,backgroundColor:P}]},options:{indexAxis:'y',...nl}});
-  const pr=[],vl=[];for(let i=1;i<S.length;i++){pr.push(S[i-1].l+' → '+S[i].l);vl.push(gap(S[i-1].h,S[i].h))}
-  mk('g3',{type:'bar',data:{labels:pr,datasets:[{data:vl,backgroundColor:P[1]}]},options:{...nl,scales:{y:{beginAtZero:true,title:{display:true,text:'ساعات'}}}}})}
- else{const c=H.find(h=>T[h]==='cat');if(c){$('t1').textContent='توزيع السجلات حسب '+c;const m=new Map();
-  F.forEach(r=>{const k=String(r[c]).trim()||'(فارغ)';m.set(k,(m.get(k)||0)+1)});const a=[...m].sort((x,y)=>y[1]-x[1]).slice(0,8);
-  mk('g1',{type:'doughnut',data:{labels:a.map(x=>x[0]),datasets:[{data:a.map(x=>x[1]),backgroundColor:P}]},options:{plugins:{legend:{position:'bottom'}}}})}}
- if(MD){const m=new Map();F.forEach(r=>{const d=dt(r,MD);if(d){const k=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());m.set(k,(m.get(k)||0)+1)}});
-  const ks=[...m.keys()].sort();
-  mk('g2',{type:'line',data:{labels:ks.map(k=>k.slice(5)),datasets:[{data:ks.map(k=>m.get(k)),borderColor:P[2],backgroundColor:'#1f7a8c22',fill:true,tension:.3}]},options:nl})}
- cust()}
-function cust(){const d=$('cd').value;if(!d)return;const m=$('cm').value,a=$('ca').value,t=$('ct').value,n=+$('cn').value,g=new Map();
- F.forEach(r=>{const k=String(r[d]).trim()||'(فارغ)',e=g.get(k)||{s:0,c:0,v:0};e.c++;
-  if(m&&String(r[m]).trim()!==''){const x=+String(r[m]).replace(/,/g,'');if(isFinite(x)){e.s+=x;e.v++}}g.set(k,e)});
- let z=[...g].map(([k,e])=>[k,a==='count'||!m?e.c:a==='avg'?(e.v?e.s/e.v:0):e.s]).sort((x,y)=>y[1]-x[1]);if(n)z=z.slice(0,n);
- mk('g4',{type:t,data:{labels:z.map(x=>x[0]),datasets:[{data:z.map(x=>x[1]),backgroundColor:t==='line'?P[2]:z.map((_,i)=>P[i%P.length]),borderColor:P[2],tension:.3}]},options:{plugins:{legend:{display:t==='doughnut',position:'bottom'}}}})}
-
+/* ---------- table + row editing ---------- */
 function so(i){const k=H[i];sort=sort.k===k?{k,d:-sort.d}:{k,d:1};page=0;table()}
 function table(){let d=F;const k=sort.k;
  if(k){const g=r=>T[k]==='date'?+dt(r,k)||0:T[k]==='num'?+String(r[k]).replace(/,/g,'')||0:String(r[k]??'');
   d=[...F].sort((a,b)=>(g(a)>g(b)?1:g(a)<g(b)?-1:0)*sort.d)}
  const per=50,pages=Math.max(1,Math.ceil(d.length/per));page=Math.min(page,pages-1);
- $('tw').innerHTML='<table><thead><tr>'+H.map((h,i)=>`<th onclick="so(${i})">${esc(h)}${k===h?(sort.d>0?' ▲':' ▼'):''}</th>`).join('')+'</tr></thead><tbody>'+
-  d.slice(page*per,page*per+per).map(r=>'<tr>'+H.map(h=>`<td>${esc(r[h])}</td>`).join('')+'</tr>').join('')+'</tbody></table>';
- $('pg').innerHTML=`<button class="s" ${page?'':'disabled'} onclick="page--;table()">السابق</button><span class="mut">صفحة ${page+1} من ${pages}</span><button class="s" ${page<pages-1?'':'disabled'} onclick="page++;table()">التالي</button>`}
+ $('tw').innerHTML='<table><thead><tr>'+H.map((h,i)=>`<th onclick="so(${i})">${esc(h)}${k===h?(sort.d>0?' ▲':' ▼'):''}</th>`).join('')+'<th></th></tr></thead><tbody>'+
+  d.slice(page*per,page*per+per).map(r=>{const i=R.indexOf(r);return'<tr>'+H.map(h=>`<td>${esc(r[h])}</td>`).join('')+`<td><button class="s" onclick="ed(${i})">${t('edit')}</button> <button class="s" onclick="del(${i})">${t('del')}</button></td></tr>`}).join('')+'</tbody></table>';
+ $('pg').innerHTML=`<button class="s" ${page?'':'disabled'} onclick="page--;table()">${t('prev')}</button><span class="mut">${t('page')} ${page+1} / ${pages}</span><button class="s" ${page<pages-1?'':'disabled'} onclick="page++;table()">${t('next')}</button>`}
+function cl(){$('md').classList.add('hidden')}
+function ed(i){EI=i;const r=i<0?{}:R[i];
+ $('mc').innerHTML=`<h3>${t(i<0?'add':'edit')}</h3><div class="row">`+H.map((h,j)=>`<div><label>${esc(h)}</label><input id="f${j}" value="${esc(r[h])}"></div>`).join('')+`</div><div class="bar"><button onclick="sr()">${t('save')}</button><button class="s" onclick="cl()">${t('cancel')}</button></div>`;
+ $('md').classList.remove('hidden')}
+function sr(){const o={};H.forEach((h,j)=>o[h]=$('f'+j).value);if(EI<0)R.push(o);else R[EI]=o;cl();apply()}
+function del(i){if(confirm(t('sure'))){R.splice(i,1);apply()}}
 function exp(all){const d=all?R:F,a=document.createElement('a');
  a.href=URL.createObjectURL(new Blob(['\ufeff'+Papa.unparse({fields:H,data:d.map(r=>H.map(h=>r[h]))})],{type:'text/csv;charset=utf-8'}));
  a.download=all?'all-data.csv':'filtered-data.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+
+/* ---------- customize panel ---------- */
+function panel(){layout();
+ let h=`<h3>${t('custom')}</h3><label>${t('name')}</label><input value="${esc(G.title)}" oninput="G.title=this.value;sv();ttl()"><label style="margin-top:8px">${t('sla')}</label><input type="number" min="1" value="${G.sla}" onchange="G.sla=+this.value||24;sv();if(R.length)draw()"><h4 style="margin-top:12px">${t('cards')}</h4>`;
+ G.order.forEach((id,i)=>{h+=`<div class="li"><label class="ck"><input type="checkbox" ${G.hide[id]?'':'checked'} onchange="tg('${id}',this.checked)"> ${t('c_'+id)}</label><span><button class="s" onclick="mv(${i},-1)">▲</button> <button class="s" onclick="mv(${i},1)">▼</button></span></div>`});
+ if(KL.length)h+=`<h4 style="margin-top:12px">${t('kpis')}</h4>`+KL.map(k=>`<label class="ck"><input type="checkbox" ${G.hk[k]?'':'checked'} onchange="G.hk['${k}']=!this.checked;sv();kpis()"> ${t('k_'+k)}</label>`).join('');
+ h+=`<div class="bar"><button class="s" onclick="rs()">${t('reset')}</button><button onclick="cl()">${t('done')}</button></div>`;
+ $('mc').innerHTML=h;$('md').classList.remove('hidden')}
+function tg(id,on){G.hide[id]=!on;sv();layout();if(R.length)charts()}
+function mv(i,d){const o=G.order,j=i+d;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];sv();panel();if(R.length)charts()}
+function rs(){try{localStorage.removeItem('dp')}catch(e){}location.reload()}
+
+/* ---------- start ---------- */
+lang=G.lang||'ar';
+Chart.defaults.font.family="'Segoe UI',Tahoma,sans-serif";
+theme(G.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+al();
 </script>
 </body>
 </html>
