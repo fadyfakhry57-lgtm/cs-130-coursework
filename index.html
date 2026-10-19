@@ -17,7 +17,7 @@ header h1{margin:0;font-size:22px}
 header p{margin:4px 0 0;font-size:13px;opacity:.8}
 header button{background:#ffffff26;padding:7px 12px}
 main{max-width:1280px;margin:14px auto 40px;padding:0 12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
 h3,h4{margin:0 0 8px;font-size:15px}
 .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
 label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:3px}
@@ -30,19 +30,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,th:focus-visible,.
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
 .mut{color:var(--mut);font-size:13px}
 .drop{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border:2px dashed var(--line);border-radius:10px;padding:18px;cursor:pointer;text-align:center;font-size:15px;color:var(--ink)}
-.drop.over{border-color:var(--amb);background:color-mix(in srgb,var(--amb) 10%,transparent)}
-.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
-.k{background:var(--card);border:1px solid var(--line);border-inline-start:5px solid var(--c);border-radius:10px;padding:10px 12px}
+.drop.over{border-color:var(--amb)}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.k{background:var(--card);border:1px solid var(--line);border-inline-start:5px solid var(--c);border-radius:10px;padding:10px 12px;min-width:0}
 .k small{color:var(--mut);display:block;font-size:12px}
 .k b{font-size:23px;line-height:1.3;overflow-wrap:anywhere}
 .k .note{display:block;color:var(--mut);font-size:11.5px}
-#cards{display:grid;grid-template-columns:1fr;gap:12px}
+#cards{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 #k_table,#k_custom{grid-column:1/-1}
-@media(min-width:820px){.kpis{grid-template-columns:repeat(4,1fr)}#cards{grid-template-columns:1fr 1fr}}
+@media(min-width:820px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}#cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
 .hd h3{margin:0}
 .ty{width:auto;padding:4px 6px;font-size:12px}
 .ch{height:270px;position:relative}
+.ch.tall{height:380px}
 .tw{overflow:auto;max-height:520px}
 table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
 th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:start}
@@ -79,7 +80,7 @@ th{background:var(--bg);position:sticky;top:0;cursor:pointer;user-select:none}
   <section class="card" id="sourceCard">
     <div class="row">
       <label class="drop">
-        <input type="file" id="file" accept=".csv,text/csv" hidden>
+        <input type="file" id="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" hidden>
         <b data-i="file"></b><small class="mut" id="st" data-i="drag" aria-live="polite"></small>
       </label>
       <div>
@@ -97,6 +98,10 @@ th{background:var(--bg);position:sticky;top:0;cursor:pointer;user-select:none}
     <section class="card" style="margin-top:12px">
       <div class="row">
         <div><label for="q" data-i="search"></label><input id="q" data-p="ph_q" type="search"></div>
+        <div id="qvw"><label for="qv" data-i="view"></label><select id="qv">
+          <option value="" data-i="v_all"></option><option value="open" data-i="v_open"></option><option value="late" data-i="v_late"></option>
+          <option value="issues" data-i="v_issues"></option><option value="cancelled" data-i="v_cancelled"></option><option value="done" data-i="v_done"></option>
+        </select></div>
         <div id="dw"><label for="d1" data-i="from"></label><input type="date" id="d1"></div>
         <div id="dw2"><label for="d2" data-i="to"></label><input type="date" id="d2"></div>
         <div id="fw"><label for="fc" data-i="filter"></label><select id="fc"></select></div>
@@ -147,47 +152,51 @@ th{background:var(--bg);position:sticky;top:0;cursor:pointer;user-select:none}
 <script>
 'use strict';
 /* =====================================================================
-   Dashboard Pro — لوحة تقارير الطلبات
+   Dashboard Pro — لوحة تقارير الأوردرات
    ===================================================================== */
 
 /* ---------- ثوابت ---------- */
 const HOUR = 36e5, PAGE_SIZE = 50;
 const COLORS = ['#1f7a8c','#f2a900','#1b9a6c','#d64545','#7b5ea7','#84a98c','#e07a5f','#4c78a8'];
 
-// أنماط التعرف على أعمدة المراحل (إنجليزي + عربي)
+// أنماط أعمدة المراحل: الأدق الأول، وبعدين الأعم (إنجليزي + عربي)
 const STAGE_PATTERNS = [
-  ['created',   /creat|placed|order\s*date|إنشاء|انشاء|تاريخ\s*الطلب/i],
-  ['picked',    /pick|التقاط/i],
-  ['packed',    /pack|تعبئة|تغليف/i],
-  ['shipped',   /ship|dispatch|شحن/i],
-  ['delivered', /deliver|تسليم|توصيل/i]
+  ['created',   [/^order\s*created\s*at$/i, /^(order\s*)?(created|creation)(\s*(at|date|time))?$/i, /تاريخ\s*(إنشاء|انشاء)?\s*الطلب|إنشاء|انشاء/i, /creat|placed|order\s*date/i]],
+  ['picked',    [/^order\s*picked\s*at$/i, /picked|التقاط/i, /pick/i]],
+  ['packed',    [/^order\s*packed\s*at$/i, /packed|تعبئة|تغليف/i, /pack/i]],
+  ['shipped',   [/^order\s*shipped\s*at$/i, /shipped|dispatched|تم\s*الشحن|شحن/i]],
+  ['delivered', [/^order\s*delivered\s*at$/i, /delivered|تسليم|توصيل/i]]
 ];
 const EXIT_PATTERNS = [
-  ['returned',  /return|مرتجع|ارتجاع|إرجاع|ارجاع/i],
-  ['cancelled', /cancel|إلغاء|الغاء|ملغ/i]
+  ['returned',  [/^order\s*returned\s*at$/i, /returned|مرتجع|ارتجاع|إرجاع|ارجاع/i]],
+  ['cancelled', [/^order\s*cancel+ed\s*at$/i, /cancel|إلغاء|الغاء|ملغ/i]]
 ];
 const ID_HEADER = /(^|[\s_-])(id|reference|ref|code|sku|barcode|phone|mobile|awb|tracking)([\s_-]|$)|رقم|كود|موبايل|تليفون|هاتف/i;
 
 /* ---------- الترجمة ---------- */
 const I18N = {
-ar:{sub:'ارفع ملف الطلبات وشوف كل التفاصيل جاهزة: التسليم، السرعة، التأخير.',custom:'تخصيص',file:'اختار ملف CSV',drag:'أو اسحب الملف هنا',url:'رابط Google Sheets (اختياري)',ph_url:'الصق الرابط هنا',ls:'تحميل الشيت',sample:'جرّب بيانات مثال',search:'بحث',ph_q:'اكتب أي كلمة',from:'من تاريخ',to:'إلى تاريخ',filter:'فلتر حسب',value:'القيمة',none:'بدون فلتر',all:'كل القيم',clear:'مسح الفلاتر',rows:'سجل',of:'من',
-k_total:'إجمالي الطلبات',k_delivered:'نسبة التسليم',k_returned:'نسبة المرتجع',k_cancelled:'نسبة الإلغاء',k_c2s:'الإنشاء للشحن (المعتاد)',k_cycle:'الإنشاء للتسليم (المعتاد)',k_open:'لسه ما اتشحنش',k_sla:'نسبة التأخير',k_cols:'عدد الأعمدة',k_sum:'مجموع',k_avg:'متوسط',
-ofShipped:'من الطلبات المشحونة',inclOpen:'شامل المفتوح المتأخر',asOf:'لحد',hr:'ساعة',day:'يوم',h:'س',
-c_funnel:'مسار الطلب: كام طلب وصل لكل مرحلة',c_daily:'الطلبات كل يوم',c_stage:'الوقت المعتاد بين المراحل (ساعات)',c_aging:'عمر الطلبات اللي لسه ما اتشحنتش (ساعات)',c_cycle:'توزيع وقت الإنشاء للشحن (ساعات)',c_hour:'الطلبات حسب ساعة اليوم',c_wday:'الطلبات حسب يوم الأسبوع',c_custom:'رسم حسب اختيارك',c_table:'البيانات',
-s_created:'إنشاء',s_picked:'التقاط',s_packed:'تعبئة',s_shipped:'شحن',s_delivered:'تسليم',s_returned:'مرتجع',s_cancelled:'إلغاء',orders:'الطلبات',open:'مفتوحة',hours:'ساعات',
+ar:{sub:'ارفع ملف الأوردرات وشوف كل التفاصيل جاهزة: البيك، الباك، الشحن، المدد والتأخير.',custom:'تخصيص',file:'اختار ملف CSV',drag:'أو اسحب الملف هنا',url:'رابط Google Sheets (اختياري)',ph_url:'الصق الرابط هنا',ls:'تحميل الشيت',sample:'جرّب بيانات مثال',search:'بحث',ph_q:'اكتب أي كلمة',from:'من تاريخ',to:'إلى تاريخ',filter:'فلتر حسب',value:'القيمة',none:'بدون فلتر',all:'كل القيم',clear:'مسح الفلاتر',rows:'سجل',of:'من',
+view:'عرض',v_all:'كل الأوردرات',v_open:'المفتوحة (لسه ما اتشحنتش)',v_late:'المتأخرة',v_issues:'اللي فيها مشاكل',v_cancelled:'الملغية',v_done:'اللي اتشحنت',
+k_total:'إجمالي الأوردرات',k_records:'إجمالي السجلات',k_n_picked:'اتعمل بيك',k_n_packed:'اتعمل باك',k_n_shipped:'اتشحن',k_n_delivered:'اتسلّم',k_returned:'مرتجع',k_cancelled:'ملغي',k_issues:'فيها مشاكل',k_open:'لسه ما اتشحنتش',k_sla:'نسبة التأخير',k_c2s:'مدة الإنشاء للشحن',k_amount:'قيمة الأوردرات',k_cols:'عدد الأعمدة',k_sum:'مجموع',k_avg:'متوسط',
+ofTotal:'من الإجمالي',ofShipped:'من المشحون',issuesNote:'ملغي + مرتجع + فشل + متأخر',inclOpen:'شامل المفتوح المتأخر',asOf:'لحد',perOrder:'متوسط الأوردر',dur:'مدة',min:'دقيقة',hr:'ساعة',day:'يوم',h:'س',
+c_funnel:'مسار الأوردر: كام أوردر وصل لكل مرحلة',c_backlog:'الأوردرات المفتوحة مستنية إيه',c_issues:'الأوردرات اللي فيها مشاكل',c_status:'حالة الأوردرات',c_stage:'المدة المعتادة بين المراحل (ساعات)',c_hour:'حركة الأوردرات حسب الساعة',c_aging:'عمر الأوردرات المفتوحة (ساعات)',c_cycle:'مدة الإنشاء للشحن (ساعات)',c_staff:'إنتاجية الموظفين (عدد الأوردرات)',c_daily:'الأوردرات كل يوم',c_wday:'الأوردرات حسب يوم الأسبوع',c_custom:'رسم حسب اختيارك',c_table:'البيانات',
+s_created:'إنشاء',s_picked:'بيك',s_packed:'باك',s_shipped:'شحن',s_delivered:'تسليم',s_returned:'مرتجع',s_cancelled:'إلغاء',orders:'الأوردرات',open:'مفتوحة',hours:'ساعات',
+waiting:'مستني',onTime:'في الوقت',late:'متأخر',lateAt:'متأخر في',i_cancelled:'ملغي',i_returned:'مرتجع',i_failed:'فشل التوصيل',noIssues:'مفيش مشاكل',picks:'بيك',packs:'باك',
 cat:'التصنيف',num:'الرقم',calc:'الحساب',shape:'الشكل',top:'عدد التصنيفات',sum:'المجموع',avg:'المتوسط',count:'العدد',bar:'أعمدة',hbar:'أعمدة أفقية',line:'خط',pie:'دائري',rowcnt:'عدد السجلات',all2:'الكل',
-name:'اسم الداشبورد',sla:'حد التأخير في الشحن (ساعات)',map:'ربط أعمدة التواريخ بالمراحل',auto:'تلقائي',missing:'مش موجود',cards:'الرسومات والأقسام (أظهر / أخفي / رتّب)',kpis:'الأرقام الرئيسية',reset:'رجوع للافتراضي',done:'تم',
+name:'اسم الداشبورد',sla:'حد التأخير (ساعات من إنشاء الأوردر لحد الشحن)',map:'ربط أعمدة التواريخ بالمراحل',auto:'تلقائي',missing:'مش موجود',cards:'الرسومات والأقسام (أظهر / أخفي / رتّب)',kpis:'الأرقام الرئيسية',reset:'رجوع للافتراضي',done:'تم',
 add:'إضافة صف',edit:'تعديل',save:'حفظ',cancel:'إلغاء',del:'حذف',sure:'متأكد من الحذف؟',e1:'تصدير النتائج CSV',e2:'تصدير الكل CSV',pr:'طباعة / PDF',prev:'السابق',next:'التالي',page:'صفحة',
 loaded:'تم تحميل',reading:'جاري القراءة...',err:'خطأ',e_empty:'الملف فاضي أو مش مفهوم',e_url:'الرابط مش رابط Google Sheets صحيح',e_net:'مش قادر أوصل للشيت. خليه متاح لأي حد معاه الرابط، أو نزّله CSV وارفعه',e_priv:'الشيت خاص، نزّله CSV وارفعه',e_xlsx:'ده ملف Excel، احفظه بصيغة CSV الأول',empty:'(فارغ)',
 dirty:'فيه تعديلات مش محفوظة، صدّر الكل CSV',lose:'التعديلات اللي عملتها هتضيع. تكمل؟',a_theme:'تبديل الوضع الليلي',a_lang:'تغيير اللغة',a_type:'نوع الرسم',a_up:'لفوق',a_down:'لتحت',
 days:['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']},
-en:{sub:'Upload your orders file and get every detail ready: delivery, speed, delays.',custom:'Customize',file:'Choose CSV file',drag:'or drag the file here',url:'Google Sheets link (optional)',ph_url:'Paste the link here',ls:'Load sheet',sample:'Try sample data',search:'Search',ph_q:'Type any word',from:'From date',to:'To date',filter:'Filter by',value:'Value',none:'No filter',all:'All values',clear:'Clear filters',rows:'records',of:'of',
-k_total:'Total orders',k_delivered:'Delivery rate',k_returned:'Return rate',k_cancelled:'Cancel rate',k_c2s:'Create to ship (typical)',k_cycle:'Create to deliver (typical)',k_open:'Not shipped yet',k_sla:'Late rate',k_cols:'Columns',k_sum:'Sum of',k_avg:'Average of',
-ofShipped:'of shipped orders',inclOpen:'incl. late open orders',asOf:'as of',hr:'h',day:'days',h:'h',
-c_funnel:'Order funnel: orders reaching each stage',c_daily:'Orders per day',c_stage:'Typical time between stages (hours)',c_aging:'Age of orders not shipped yet (hours)',c_cycle:'Create-to-ship time spread (hours)',c_hour:'Orders by hour of day',c_wday:'Orders by weekday',c_custom:'Your own chart',c_table:'Data',
-s_created:'Created',s_picked:'Picked',s_packed:'Packed',s_shipped:'Shipped',s_delivered:'Delivered',s_returned:'Returned',s_cancelled:'Cancelled',orders:'Orders',open:'Open',hours:'Hours',
+en:{sub:'Upload your orders file and get everything ready: pick, pack, ship, durations and delays.',custom:'Customize',file:'Choose CSV file',drag:'or drag the file here',url:'Google Sheets link (optional)',ph_url:'Paste the link here',ls:'Load sheet',sample:'Try sample data',search:'Search',ph_q:'Type any word',from:'From date',to:'To date',filter:'Filter by',value:'Value',none:'No filter',all:'All values',clear:'Clear filters',rows:'records',of:'of',
+view:'Show',v_all:'All orders',v_open:'Open (not shipped yet)',v_late:'Late',v_issues:'With problems',v_cancelled:'Cancelled',v_done:'Shipped',
+k_total:'Total orders',k_records:'Total records',k_n_picked:'Picked',k_n_packed:'Packed',k_n_shipped:'Shipped',k_n_delivered:'Delivered',k_returned:'Returned',k_cancelled:'Cancelled',k_issues:'With problems',k_open:'Not shipped yet',k_sla:'Late rate',k_c2s:'Create to ship',k_amount:'Orders value',k_cols:'Columns',k_sum:'Sum of',k_avg:'Average of',
+ofTotal:'of total',ofShipped:'of shipped',issuesNote:'cancelled + returned + failed + late',inclOpen:'incl. late open orders',asOf:'as of',perOrder:'avg per order',dur:'Time',min:'min',hr:'h',day:'days',h:'h',
+c_funnel:'Order funnel: orders reaching each stage',c_backlog:'What open orders are waiting for',c_issues:'Orders with problems',c_status:'Order status',c_stage:'Typical time between stages (hours)',c_hour:'Order activity by hour',c_aging:'Age of open orders (hours)',c_cycle:'Create-to-ship time (hours)',c_staff:'Staff productivity (orders)',c_daily:'Orders per day',c_wday:'Orders by weekday',c_custom:'Your own chart',c_table:'Data',
+s_created:'Created',s_picked:'Pick',s_packed:'Pack',s_shipped:'Ship',s_delivered:'Deliver',s_returned:'Returned',s_cancelled:'Cancelled',orders:'Orders',open:'Open',hours:'Hours',
+waiting:'Waiting for',onTime:'On time',late:'Late',lateAt:'Late at',i_cancelled:'Cancelled',i_returned:'Returned',i_failed:'Delivery failed',noIssues:'No problems',picks:'Picks',packs:'Packs',
 cat:'Category',num:'Number',calc:'Calculation',shape:'Shape',top:'Top items',sum:'Sum',avg:'Average',count:'Count',bar:'Bars',hbar:'Horizontal bars',line:'Line',pie:'Doughnut',rowcnt:'Record count',all2:'All',
-name:'Dashboard name',sla:'Shipping delay limit (hours)',map:'Match date columns to stages',auto:'Auto',missing:'Not in file',cards:'Charts and sections (show / hide / reorder)',kpis:'Key numbers',reset:'Reset to default',done:'Done',
+name:'Dashboard name',sla:'Delay limit (hours from order creation to shipping)',map:'Match date columns to stages',auto:'Auto',missing:'Not in file',cards:'Charts and sections (show / hide / reorder)',kpis:'Key numbers',reset:'Reset to default',done:'Done',
 add:'Add row',edit:'Edit',save:'Save',cancel:'Cancel',del:'Delete',sure:'Delete this row?',e1:'Export results CSV',e2:'Export all CSV',pr:'Print / PDF',prev:'Previous',next:'Next',page:'Page',
 loaded:'Loaded',reading:'Reading...',err:'Error',e_empty:'File is empty or unreadable',e_url:'Not a valid Google Sheets link',e_net:'Can’t reach the sheet. Share it as “Anyone with the link”, or download it as CSV and upload',e_priv:'Sheet is private, download it as CSV and upload',e_xlsx:'This is an Excel file, save it as CSV first',empty:'(empty)',
 dirty:'Unsaved edits, export all as CSV',lose:'Your edits will be lost. Continue?',a_theme:'Toggle dark mode',a_lang:'Change language',a_type:'Chart type',a_up:'Move up',a_down:'Move down',
@@ -199,7 +208,7 @@ const defaultSettings = () => ({title:'Dashboard Pro',sla:24,hide:{},order:[],ty
 function loadSettings(){
   try{
     const s = JSON.parse(localStorage.getItem('dp') || '{}');
-    if(s.hk && !s.hideKpi) s.hideKpi = s.hk;   // ترحيل إعدادات النسخة القديمة
+    if(s.hk && !s.hideKpi) s.hideKpi = s.hk;
     delete s.hk;
     return {...defaultSettings(), ...s};
   }catch{ return defaultSettings(); }
@@ -208,10 +217,10 @@ function saveSettings(){ try{ localStorage.setItem('dp', JSON.stringify(settings
 
 /* ---------- الحالة ---------- */
 let settings = loadSettings(), lang = settings.lang || 'ar';
-let headers = [], rows = [], filtered = [], types = {}, monthFirst = {};
-let stages = [], exits = [], mainDate = null, refTime = 0;
-let charts = {}, sortState = {col:null, dir:1}, page = 0, kpiKeys = [], editIndex = -1, dirty = false;
-let dateCache = new WeakMap(), textCache = new WeakMap(), lastFocus = null;
+let headers = [], rows = [], filtered = [], orders = [], types = {}, monthFirst = {};
+let stages = [], exits = [], special = {}, hasDupIds = false, mainDate = null, refTime = 0, multiDay = false, weekSpan = false;
+let charts = {}, sortState = {col:null, dir:1}, page = 0, kpiList = [], editIndex = -1, dirty = false;
+let dateCache = new WeakMap(), textCache = new WeakMap(), infoCache = new WeakMap(), lastFocus = null;
 
 /* ---------- أدوات عامة ---------- */
 const $ = id => document.getElementById(id);
@@ -219,17 +228,26 @@ const pad2 = n => String(n).padStart(2, '0');
 const t = k => I18N[lang][k] ?? k;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtNum = n => Number(n || 0).toLocaleString('en-US', {maximumFractionDigits:1});
-const fmtHours = h => h == null ? '—' : h < 48 ? h.toFixed(1) + ' ' + t('hr') : (h / 24).toFixed(1) + ' ' + t('day');
+const fmtHours = h => h == null ? '—' : h < 1 ? Math.round(h * 60) + ' ' + t('min') : h < 48 ? h.toFixed(1) + ' ' + t('hr') : (h / 24).toFixed(1) + ' ' + t('day');
 const dayKey = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+const fmtDateTime = d => dayKey(d) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 const cellText = (row, col) => String(row[col] ?? '').trim();
 const setStatus = msg => { $('st').textContent = msg; };
+const arrow = () => lang === 'ar' ? ' ← ' : ' → ';
+const pct = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '—';
 
 /* ---------- parsing ---------- */
 const toLatinDigits = s => s.replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776);
 
+// أرقام بعملة أو وحدة زي "685 EGP" أو "1.5 kg"
+const UNIT = '(?:EGP|SAR|AED|USD|KWD|QAR|LE|L\\.E\\.?|kgs?|gm?|grams?|pcs|%|جنيه|ج\\.?م\\.?|ريال|درهم|كجم|كيلو|جم|قطعة|\\$|€|£)';
+const RE_NUM = new RegExp('^(?:' + UNIT + '\\s*)?([-+]?\\d[\\d.,٬٫ ]*?)\\s*(?:' + UNIT + ')?$', 'i');
+const RE_UNIT_END = new RegExp('(' + UNIT + ')\\s*$', 'i');
 function parseNum(v){
-  const s = toLatinDigits(String(v ?? '').trim()).replace(/[,\s٬]/g, '').replace('٫', '.');
-  return s === '' ? NaN : +s;
+  const s = toLatinDigits(String(v ?? '').trim());
+  if(!s) return NaN;
+  const m = s.match(RE_NUM);
+  return m ? +m[1].replace(/[, ٬]/g, '').replace('٫', '.') : NaN;
 }
 
 const TIME_PART = '(?:[ T]+(\\d{1,2}):(\\d{2})(?::(\\d{2}))?(?:\\.\\d+)?\\s*(AM|PM|ص|م)?)?';
@@ -237,7 +255,6 @@ const RE_YMD = new RegExp('^(\\d{4})[/.-](\\d{1,2})[/.-](\\d{1,2})' + TIME_PART,
 const RE_DMY = new RegExp('^(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{4})' + TIME_PART, 'i');
 const RE_ISO_TZ = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/i;
 
-// monthFirst = true لو العمود بصيغة شهر/يوم/سنة (زي تصدير Google Sheets الأمريكي)
 function parseDate(value, mFirst = false){
   const v = toLatinDigits(String(value ?? '').trim());
   if(!v) return null;
@@ -252,11 +269,8 @@ function parseDate(value, mFirst = false){
   if((ap === 'AM' || ap === 'ص') && h === 12) h = 0;
   if(h > 23 || mi > 59) return null;
   const r = new Date(y, mo - 1, d, h, mi, +(m[6] || 0));
-  // رفض التواريخ المستحيلة بدل ما JavaScript يرحّلها (31/02 أو شهر 13)
   return r.getFullYear() === y && r.getMonth() === mo - 1 && r.getDate() === d ? r : null;
 }
-
-// يحدد ترتيب اليوم والشهر من قيم العمود نفسه
 function guessMonthFirst(values){
   let dayFirst = false, mFirst = false;
   for(const v of values){
@@ -269,6 +283,7 @@ function guessMonthFirst(values){
 /* ---------- end parsing ---------- */
 
 function getDate(row, col){
+  if(!col) return null;
   let c = dateCache.get(row);
   if(!c){ c = {}; dateCache.set(row, c); }
   if(!(col in c)) c[col] = types[col] === 'date' ? parseDate(row[col], monthFirst[col]) : null;
@@ -279,15 +294,40 @@ function rowText(row){
   if(s == null){ s = headers.map(h => String(row[h] ?? '')).join('\u0001').toLowerCase(); textCache.set(row, s); }
   return s;
 }
+function unitOf(col){
+  for(const r of rows){ const s = cellText(r, col); if(s){ const m = s.match(RE_UNIT_END); return m ? m[1] : ''; } }
+  return '';
+}
 
-/* ---------- إحصائيات ---------- */
+/* ---------- حالة كل أوردر ---------- */
 const stageCol = k => stages.find(s => s.key === k)?.col || null;
 const exitCol = k => exits.find(s => s.key === k)?.col || null;
-const countWith = col => col ? filtered.reduce((n, r) => n + (getDate(r, col) ? 1 : 0), 0) : 0;
+const countWith = col => col ? orders.reduce((n, r) => n + (getDate(r, col) ? 1 : 0), 0) : 0;
 
+function orderInfo(r){
+  let info = infoCache.get(r);
+  if(info) return info;
+  let reached = -1;
+  stages.forEach((s, i) => { if(getDate(r, s.col)) reached = i; });
+  const cancelled = !!getDate(r, exitCol('cancelled')), returned = !!getDate(r, exitCol('returned'));
+  const si = stages.findIndex(s => s.key === 'shipped'), doneIdx = si >= 0 ? si : stages.length - 1;
+  const done = !cancelled && reached >= doneIdx;
+  const open = !cancelled && !returned && reached >= 0 && reached < doneIdx;
+  const start = stages.length ? getDate(r, stages[0].col) : null;
+  const age = open && start ? (refTime - start) / HOUR : null;
+  const late = open && age != null && age > settings.sla;
+  const failed = !!(special.failed && cellText(r, special.failed));
+  const waiting = open ? stages[reached + 1]?.key || null : null;
+  const issue = cancelled ? 'cancelled' : returned ? 'returned' : failed ? 'failed' : late ? 'late' : null;
+  info = {reached, cancelled, returned, done, open, age, late, failed, waiting, issue};
+  infoCache.set(r, info);
+  return info;
+}
+
+/* ---------- إحصائيات ---------- */
 function hoursBetween(a, b){
   const out = [];
-  filtered.forEach(r => { const x = getDate(r, a), y = getDate(r, b); if(x && y && y >= x) out.push((y - x) / HOUR); });
+  orders.forEach(r => { const x = getDate(r, a), y = getDate(r, b); if(x && y && y >= x) out.push((y - x) / HOUR); });
   return out.sort((p, q) => p - q);
 }
 function quantile(sorted, q){
@@ -299,11 +339,13 @@ function durationStats(a, b){
   const s = hoursBetween(a, b);
   return {n:s.length, median:quantile(s, .5), p90:quantile(s, .9), avg:s.length ? s.reduce((x, y) => x + y, 0) / s.length : null};
 }
-function openOrders(){
-  const c = stageCol('created'), s = stageCol('shipped'), x = exitCol('cancelled');
-  if(!c || !s) return [];
-  return filtered.filter(r => getDate(r, c) && !getDate(r, s) && !(x && getDate(r, x)));
+const durNote = s => s.n ? `${t('avg')} ${fmtHours(s.avg)} · P90 ${fmtHours(s.p90)}` : '';
+function bucketize(values, edges){
+  const b = Array(edges.length + 1).fill(0);
+  values.forEach(h => { let i = edges.findIndex(e => h < e); if(i < 0) i = edges.length; b[i]++; });
+  return b;
 }
+const bucketLabels = edges => edges.map((e, i) => i ? `${edges[i - 1]}–${e}` : `<${e}`).concat(`${edges.at(-1)}+`);
 
 /* ---------- اكتشاف الأعمدة ---------- */
 function detectTypes(){
@@ -317,50 +359,72 @@ function detectTypes(){
     else if(ID_HEADER.test(h)) types[h] = 'id';
     else if(vals.filter(v => isFinite(parseNum(v))).length / vals.length > .8)
       types[h] = (vals.every(v => /^\d+$/.test(toLatinDigits(v))) && unique > .95 * vals.length && vals.length > 20) ? 'id' : 'num';
-    else types[h] = (unique <= 40 && vals.length / sample.length > .3) ? 'cat' : 'text';
+    else types[h] = unique > 1 && vals.length / sample.length > .05 && (unique <= 12 || (unique <= 200 && unique <= vals.length * .2)) ? 'cat' : 'text';
   }
 }
-function detectStages(){
+function findCol(patterns, ok = () => true){
+  for(const re of patterns){ const h = headers.find(c => ok(c) && re.test(c)); if(h) return h; }
+  return null;
+}
+function detectColumns(){
   const dateCols = headers.filter(h => types[h] === 'date'), used = new Set();
-  Object.values(settings.map).forEach(c => { if(dateCols.includes(c)) used.add(c); }); // الاختيار اليدوي له الأولوية
-  const pick = (key, re) => {
+  Object.values(settings.map).forEach(c => { if(dateCols.includes(c)) used.add(c); });
+  const pick = (key, patterns) => {
     const manual = settings.map[key];
     if(manual === '-') return null;
     if(manual && dateCols.includes(manual)) return manual;
-    const h = dateCols.find(c => !used.has(c) && re.test(c));
-    if(h) used.add(h);
-    return h || null;
+    for(const re of patterns){ const h = dateCols.find(c => !used.has(c) && re.test(c)); if(h){ used.add(h); return h; } }
+    return null;
   };
-  exits = EXIT_PATTERNS.map(([k, re]) => ({key:k, col:pick(k, re)})).filter(s => s.col);
-  stages = STAGE_PATTERNS.map(([k, re]) => ({key:k, col:pick(k, re)})).filter(s => s.col);
+  exits = EXIT_PATTERNS.map(([k, p]) => ({key:k, col:pick(k, p)})).filter(s => s.col);
+  stages = STAGE_PATTERNS.map(([k, p]) => ({key:k, col:pick(k, p)})).filter(s => s.col);
   mainDate = stageCol('created') || stages[0]?.col || dateCols[0] || null;
+  const notDate = c => types[c] !== 'date' && types[c] !== 'empty';
+  special = {
+    id:     findCol([/^order\s*(id|number|no\.?)$/i, /^رقم\s*(الطلب|الأوردر)$/i, /order\s*(id|number)|رقم\s*الطلب/i], notDate),
+    status: findCol([/^order\s*status$/i, /^status$|^الحالة$|^حالة\s*(الطلب|الأوردر)$/i], c => types[c] === 'cat'),
+    picker: findCol([/picked\s*by|picker|التقاط\s*بواسطة/i], notDate),
+    packer: findCol([/packed\s*by|packer|تعبئة\s*بواسطة/i], notDate),
+    failed: findCol([/fail(ed|ure)?\s*reason|سبب\s*الفشل/i], notDate),
+    amount: findCol([/^order\s*amount$/i, /amount|order\s*value|قيمة|مبلغ/i], c => types[c] === 'num')
+  };
+  if(special.id){ const ids = rows.map(r => cellText(r, special.id)).filter(Boolean); hasDupIds = new Set(ids).size < ids.length; }
+  else hasDupIds = false;
 }
 
-// يتنادى بعد التحميل وبعد أي تعديل في البيانات
-function prepare(){
-  dateCache = new WeakMap(); textCache = new WeakMap();
-  detectTypes(); detectStages();
+function prepare(isNew = false){
+  dateCache = new WeakMap(); textCache = new WeakMap(); infoCache = new WeakMap();
+  detectTypes(); detectColumns();
   refTime = 0;
   headers.filter(h => types[h] === 'date').forEach(h => rows.forEach(r => { const d = getDate(r, h); if(d && +d > refTime) refTime = +d; }));
+  let lo = Infinity, hi = -Infinity;
+  if(mainDate) rows.forEach(r => { const d = getDate(r, mainDate); if(d){ lo = Math.min(lo, +d); hi = Math.max(hi, +d); } });
+  multiDay = hi > lo && dayKey(new Date(lo)) !== dayKey(new Date(hi));
+  weekSpan = hi - lo >= 6 * 864e5;
   const cats = headers.filter(h => types[h] === 'cat'), nums = headers.filter(h => types[h] === 'num');
   fillSelect('fc', cats, t('none')); fillValues();
   fillSelect('cd', cats); fillSelect('cm', nums, t('rowcnt'));
+  if(isNew && cats.length) $('cd').value = cats.find(c => c !== special.status) || cats[0];
   ['fw','fvw'].forEach(id => $(id).classList.toggle('hidden', !cats.length));
   ['dw','dw2'].forEach(id => $(id).classList.toggle('hidden', !mainDate));
+  $('qvw').classList.toggle('hidden', stages.length < 2);
 }
 
 /* ---------- تحميل البيانات ---------- */
 function decodeBuffer(buf){
+  const b = new Uint8Array(buf);
+  if(b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder('utf-16le').decode(buf); // تصدير "Unicode Text"
+  if(b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder('utf-16be').decode(buf);
   try{ return new TextDecoder('utf-8', {fatal:true}).decode(buf); }
-  catch{ return new TextDecoder('windows-1256').decode(buf); } // ملفات Excel العربية القديمة
+  catch{ return new TextDecoder('windows-1256').decode(buf); }
 }
 async function loadText(text){
-  await new Promise(r => setTimeout(r)); // عشان رسالة "جاري القراءة" تظهر قبل التحليل
+  await new Promise(r => setTimeout(r));
   const res = Papa.parse(text.replace(/^\ufeff/, ''), {header:true, skipEmptyLines:'greedy', transformHeader:h => h.trim()});
   const fields = (res.meta.fields || []).filter(h => h && h !== '__parsed_extra');
   if(!res.data.length || !fields.length) throw Error(t('e_empty'));
   headers = fields; rows = res.data; dirty = false;
-  prepare();
+  prepare(true);
   sortState = {col:null, dir:1};
   $('app').classList.remove('hidden');
   resetFilters();
@@ -388,12 +452,12 @@ async function loadSheet(){
     const gid = u.searchParams.get('gid') || (u.hash.match(/gid=(\d+)/) || [])[1] || '0';
     const pub = u.pathname.match(/\/spreadsheets\/d\/e\/([\w-]+)/), id = u.pathname.match(/\/spreadsheets\/d\/([\w-]+)/);
     let csvUrl;
-    if(pub) csvUrl = `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?output=csv&gid=${gid}`; // رابط "نشر على الويب"
+    if(pub) csvUrl = `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?output=csv&gid=${gid}`;
     else if(id) csvUrl = `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${gid}`;
     else throw Error(t('e_url'));
     setStatus(t('reading'));
     let res;
-    try{ res = await fetch(csvUrl); }catch{ throw Error(t('e_net')); } // CORS أو مفيش نت
+    try{ res = await fetch(csvUrl); }catch{ throw Error(t('e_net')); }
     if(!res.ok) throw Error(t('e_net'));
     const text = await res.text();
     if(/<html/i.test(text.slice(0, 500))) throw Error(t('e_priv'));
@@ -401,42 +465,99 @@ async function loadSheet(){
   });
 }
 function makeSample(){
-  const head = ['ORDER ID','ORDER CREATED AT','ORDER PICKED AT','ORDER PACKED AT','ORDER SHIPPED AT','ORDER DELIVERED AT','ORDER RETURNED AT','ORDER CANCELLED AT','SALES CHANNEL','HUB','ORDER VALUE'];
-  const channels = ['Noon','Amazon','Shopify','Salla'], hubs = ['Cairo','Alexandria','10th of Ramadan'], out = [head];
-  const rnd = (a, b) => a + Math.random() * (b - a);
+  const head = ['ORDER ID','ORDER CREATED AT','ORDER PICKED AT','ORDER PACKED AT','ORDER SHIPPED AT','ORDER DELIVERED AT','ORDER RETURNED AT','ORDER CANCELLED AT','ORDER STATUS','SELLER NAME','DESTINATION CITY','PICKED BY','PACKED BY','ORDER AMOUNT'];
+  const sellers = ['Kaline cosmetics','Mavinwear','Dermaelle','Mood','Angels'], cities = ['Cairo','Giza','Alexandria','Sharqia','Dakahlia'];
+  const staff = ['Mohamed Ahmed','Bassem Abdelgawad','Rahma Rafat','Ahmed Khaled'], out = [head];
+  const rnd = (a, b) => a + Math.random() * (b - a), any = a => a[Math.floor(Math.random() * a.length)];
   const fmt = d => `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
   for(let i = 0; i < 400; i++){
     let d = new Date(2026, 8, 1 + Math.floor(rnd(0, 14)), Math.floor(rnd(8, 22)), Math.floor(rnd(0, 60)));
     const step = h => { d = new Date(+d + h * HOUR); return fmt(d); };
     const z = Math.random(), reached = z < .1 ? 1 : z < .2 ? 2 : z < .3 ? 3 : z < .4 ? 4 : 5;
     const row = [48000000 + i * 37, fmt(d)];
-    row.push(reached >= 2 ? step(rnd(1, 10)) : '', reached >= 3 ? step(rnd(.5, 6)) : '', reached >= 4 ? step(rnd(2, 40)) : '', reached >= 5 ? step(rnd(20, 90)) : '');
+    row.push(reached >= 2 ? step(rnd(1, 10)) : '', reached >= 3 ? step(rnd(.3, 3)) : '', reached >= 4 ? step(rnd(.1, 6)) : '', reached >= 5 ? step(rnd(20, 90)) : '');
     row.push(reached >= 5 && Math.random() < .08 ? step(rnd(24, 100)) : '');
-    row.push(reached < 4 && Math.random() < .25 ? step(rnd(1, 30)) : '');
-    row.push(channels[i % 4], hubs[i % 3], Math.round(rnd(150, 3500)));
+    const cancel = reached < 4 && Math.random() < .25;
+    row.push(cancel ? step(rnd(1, 30)) : '');
+    row.push(cancel ? 'CANCELLED' : ['NEW ORDER','PICKED','PACKED','SHIPPED','DELIVERED'][reached - 1]);
+    row.push(any(sellers), any(cities), reached >= 2 ? any(staff) : '', reached >= 3 ? any(staff) : '', Math.round(rnd(150, 3500)) + ' EGP');
     out.push(row);
   }
   return Papa.unparse(out);
 }
 
 /* ---------- الرسومات ---------- */
-const arrow = () => lang === 'ar' ? ' ← ' : ' → ';
+const countBy = (list, fn) => { const m = new Map(); list.forEach(r => { const k = fn(r); if(k != null) m.set(k, (m.get(k) || 0) + 1); }); return [...m].sort((a, b) => b[1] - a[1]); };
 const CHARTS = [
   {id:'funnel', kind:'hbar', ok:() => stages.length >= 2, data(){
     const v = stages.map(s => countWith(s.col)), base = v[0] || 1;
     return {labels:stages.map((s, i) => `${t('s_' + s.key)} (${Math.round(v[i] / base * 100)}%)`), series:[{name:t('orders'), values:v}]};
   }},
-  {id:'daily', kind:'line', ok:() => !!mainDate, data(){
+  {id:'backlog', kind:'bar', ok:() => stages.length >= 2, data(){
+    const on = {}, late = {};
+    orders.forEach(r => { const i = orderInfo(r); if(!i.open || !i.waiting) return; on[i.waiting] ??= 0; late[i.waiting] ??= 0; i.late ? late[i.waiting]++ : on[i.waiting]++; });
+    const keys = stages.map(s => s.key).filter(k => k in on);
+    return {labels:keys.map(k => `${t('waiting')} ${t('s_' + k)}`), stacked:true,
+      series:[{name:t('onTime'), values:keys.map(k => on[k]), color:COLORS[0]}, {name:t('late'), values:keys.map(k => late[k]), color:COLORS[3]}]};
+  }},
+  {id:'issues', kind:'bar', ok:() => stages.length >= 2, data(){
+    const it = countBy(orders, r => { const i = orderInfo(r); return !i.issue ? null : i.issue === 'late' ? `${t('lateAt')} ${t('s_' + i.waiting)}` : t('i_' + i.issue); });
+    if(!it.length) return {labels:[t('noIssues')], series:[{name:t('orders'), values:[0]}]};
+    return {labels:it.map(x => x[0]), series:[{name:t('orders'), values:it.map(x => x[1]), color:COLORS[3]}]};
+  }},
+  {id:'status', kind:'hbar', tall:true, ok:() => !!special.status, data(){
+    const it = countBy(orders, r => cellText(r, special.status) || t('empty'));
+    return {labels:it.map(x => x[0]), series:[{name:t('orders'), values:it.map(x => x[1])}]};
+  }},
+  {id:'stage', kind:'bar', ok:() => stages.length >= 2, data(){
+    const labels = [], values = [];
+    for(let i = 1; i < stages.length; i++){
+      const m = durationStats(stages[i - 1].col, stages[i].col).median;
+      if(m == null) continue;
+      labels.push(t('s_' + stages[i - 1].key) + arrow() + t('s_' + stages[i].key));
+      values.push(+m.toFixed(2));
+    }
+    return {labels, series:[{name:t('hours'), values}]};
+  }},
+  {id:'hour', kind:'line', ok:() => !!mainDate, data(){
+    const cols = stages.length ? stages.filter(s => s.key !== 'delivered') : [{key:'orders', col:mainDate}];
+    const a = cols.map(() => Array(24).fill(0));
+    cols.forEach((c, j) => orders.forEach(r => { const d = getDate(r, c.col); if(d) a[j][d.getHours()]++; }));
+    const any = h => a.some(s => s[h]);
+    let lo = 0, hi = 23;
+    while(lo < hi && !any(lo)) lo++;
+    while(hi > lo && !any(hi)) hi--;
+    return {labels:Array.from({length:hi - lo + 1}, (_, i) => pad2(lo + i)),
+      series:cols.map((c, j) => ({name:c.key === 'orders' ? t('orders') : t('s_' + c.key), values:a[j].slice(lo, hi + 1)}))};
+  }},
+  {id:'aging', kind:'bar', ok:() => stages.length >= 2, data(){
+    const edges = [2, 4, 8, 24, 48];
+    const ages = orders.map(orderInfo).filter(i => i.open && i.age != null).map(i => i.age);
+    return {labels:bucketLabels(edges), series:[{name:t('open'), values:bucketize(ages, edges), color:COLORS[1]}]};
+  }},
+  {id:'cycle', kind:'bar', ok:() => stages.length >= 2 && !!stageCol('shipped'), data(){
+    const edges = [1, 2, 4, 8, 24];
+    return {labels:bucketLabels(edges), series:[{name:t('orders'), values:bucketize(hoursBetween(stages[0].col, stageCol('shipped')), edges)}]};
+  }},
+  {id:'staff', kind:'hbar', tall:true, ok:() => !!(special.picker || special.packer), data(){
+    const m = new Map();
+    [special.picker, special.packer].forEach((col, j) => { if(col) orders.forEach(r => { const n = cellText(r, col); if(!n) return; const a = m.get(n) || [0, 0]; a[j]++; m.set(n, a); }); });
+    const items = [...m].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1])).slice(0, 15), series = [];
+    if(special.picker) series.push({name:t('picks'), values:items.map(x => x[1][0])});
+    if(special.packer) series.push({name:t('packs'), values:items.map(x => x[1][1]), color:COLORS[1]});
+    return {labels:items.map(x => x[0]), series, stacked:true};
+  }},
+  {id:'daily', kind:'line', ok:() => !!mainDate && multiDay, data(){
     let cols = stages.filter(s => ['created','shipped','delivered'].includes(s.key));
     if(!cols.length) cols = [{key:'orders', col:mainDate}];
     const counts = new Map();
-    cols.forEach((c, j) => filtered.forEach(r => {
+    cols.forEach((c, j) => orders.forEach(r => {
       const d = getDate(r, c.col); if(!d) return;
       const k = dayKey(d), a = counts.get(k) || Array(cols.length).fill(0);
       a[j]++; counts.set(k, a);
     }));
     let keys = [...counts.keys()].sort();
-    if(keys.length > 1){ // نملا الأيام الفاضية بصفر بدل ما الخط يقفز عليها
+    if(keys.length > 1){
       const all = [];
       for(let d = new Date(keys[0] + 'T00:00'), end = new Date(keys.at(-1) + 'T00:00'); d <= end && all.length <= 1500; d.setDate(d.getDate() + 1)) all.push(dayKey(d));
       if(all.length <= 1500) keys = all;
@@ -445,33 +566,9 @@ const CHARTS = [
     return {labels:keys.map(k => multiYear ? k : k.slice(5)),
       series:cols.map((c, j) => ({name:t(c.key === 'orders' ? 'orders' : 's_' + c.key), values:keys.map(k => counts.get(k)?.[j] || 0)}))};
   }},
-  {id:'stage', kind:'bar', ok:() => stages.length >= 2, data(){
-    const labels = [], values = [];
-    for(let i = 1; i < stages.length; i++){
-      labels.push(t('s_' + stages[i - 1].key) + arrow() + t('s_' + stages[i].key));
-      const m = durationStats(stages[i - 1].col, stages[i].col).median;
-      values.push(m == null ? 0 : +m.toFixed(1));
-    }
-    return {labels, series:[{name:t('hours'), values}]};
-  }},
-  {id:'aging', kind:'bar', ok:() => !!(stageCol('created') && stageCol('shipped')), data(){
-    const c = stageCol('created'), b = [0, 0, 0, 0];
-    openOrders().forEach(r => { const h = (refTime - getDate(r, c)) / HOUR; b[h < 24 ? 0 : h < 48 ? 1 : h < 72 ? 2 : 3]++; });
-    return {labels:['<24','24–48','48–72','72+'], series:[{name:t('open'), values:b}]};
-  }},
-  {id:'cycle', kind:'bar', ok:() => !!(stageCol('created') && stageCol('shipped')), data(){
-    const b = [0, 0, 0, 0, 0];
-    hoursBetween(stageCol('created'), stageCol('shipped')).forEach(h => b[h < 6 ? 0 : h < 12 ? 1 : h < 24 ? 2 : h < 48 ? 3 : 4]++);
-    return {labels:['<6','6–12','12–24','24–48','48+'], series:[{name:t('orders'), values:b}]};
-  }},
-  {id:'hour', kind:'bar', ok:() => !!mainDate, data(){
-    const a = Array(24).fill(0);
-    filtered.forEach(r => { const d = getDate(r, mainDate); if(d) a[d.getHours()]++; });
-    return {labels:a.map((_, i) => pad2(i)), series:[{name:t('orders'), values:a}]};
-  }},
-  {id:'wday', kind:'bar', ok:() => !!mainDate, data(){
+  {id:'wday', kind:'bar', ok:() => !!mainDate && weekSpan, data(){
     const a = Array(7).fill(0);
-    filtered.forEach(r => { const d = getDate(r, mainDate); if(d) a[d.getDay()]++; });
+    orders.forEach(r => { const d = getDate(r, mainDate); if(d) a[d.getDay()]++; });
     return {labels:t('days'), series:[{name:t('orders'), values:a}]};
   }}
 ];
@@ -482,8 +579,8 @@ CHARTS.forEach(c => {
   card.className = 'card'; card.id = 'k_' + c.id;
   card.innerHTML = `<div class="hd"><h3 data-i="c_${c.id}"></h3><select class="ty" data-chart="${c.id}" data-a="a_type">` +
     ['bar','hbar','line','pie'].map(x => `<option value="${x}"${x === cur ? ' selected' : ''} data-i="${x}"></option>`).join('') +
-    `</select></div><div class="ch"><canvas id="g_${c.id}"></canvas></div>`;
-  $('cards').appendChild(card);
+    `</select></div><div class="ch${c.tall ? ' tall' : ''}"><canvas id="g_${c.id}"></canvas></div>`;
+  $('cards').insertBefore(card, $('k_custom'));
 });
 
 const isHidden = id => $('k_' + id).classList.contains('hidden');
@@ -494,27 +591,33 @@ function isAvailable(id){
   return CHARTS.find(c => c.id === id).ok();
 }
 function applyLayout(){
-  settings.order = [...settings.order.filter(id => CARD_IDS.includes(id)), ...CARD_IDS.filter(id => !settings.order.includes(id))];
-  settings.order.forEach((id, i) => {
+  const o = settings.order.filter(id => CARD_IDS.includes(id));
+  CARD_IDS.forEach((id, i) => { // الأقسام الجديدة تتحط في مكانها الطبيعي
+    if(o.includes(id)) return;
+    const prev = CARD_IDS.slice(0, i).reverse().find(p => o.includes(p));
+    o.splice(prev ? o.indexOf(prev) + 1 : 0, 0, id);
+  });
+  settings.order = o;
+  o.forEach((id, i) => {
     const el = $('k_' + id);
     el.style.order = i;
     el.classList.toggle('hidden', !!settings.hide[id] || !isAvailable(id));
   });
 }
-// بيحدّث الرسمة الموجودة بدل ما يمسحها ويعملها من الأول
-function renderChart(id, kind, labels, series){
+function renderChart(id, kind, labels, series, stacked = false){
   const pie = kind === 'pie', multi = series.length > 1, type = pie ? 'doughnut' : kind === 'hbar' ? 'bar' : kind;
-  const card = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
+  const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
+  const stack = stacked && !pie && kind !== 'line';
   const cfg = {
     type,
-    data:{labels, datasets:series.map((s, j) => ({
-      label:s.name, data:s.values,
-      backgroundColor:pie ? COLORS : kind === 'line' ? COLORS[j % 8] + '33' : COLORS[j % 8],
-      borderColor:pie ? card : COLORS[j % 8], fill:kind === 'line' && !multi, tension:.3
-    }))},
+    data:{labels, datasets:series.map((s, j) => {
+      const c = s.color || COLORS[j % 8];
+      return {label:s.name, data:s.values, backgroundColor:pie ? COLORS : kind === 'line' ? c + '33' : c,
+        borderColor:pie ? cardColor : c, fill:kind === 'line' && !multi, tension:.3};
+    })},
     options:{maintainAspectRatio:false, animation:{duration:250}, indexAxis:kind === 'hbar' ? 'y' : 'x',
       plugins:{legend:{display:pie || multi, position:'bottom'}},
-      scales:pie ? {} : {x:{beginAtZero:true}, y:{beginAtZero:true}}}
+      scales:pie ? {} : {x:{beginAtZero:true, stacked:stack}, y:{beginAtZero:true, stacked:stack}}}
   };
   const sig = type + cfg.options.indexAxis, ch = charts[id];
   if(ch && ch.$sig === sig){ ch.data = cfg.data; ch.options = cfg.options; ch.update(); return; }
@@ -526,7 +629,7 @@ function destroyCharts(){ Object.values(charts).forEach(c => c.destroy()); chart
 function drawChart(def){
   if(isHidden(def.id)) return;
   const d = def.data();
-  renderChart(def.id, settings.type[def.id] || def.kind, d.labels, d.series);
+  renderChart(def.id, settings.type[def.id] || def.kind, d.labels, d.series, d.stacked);
 }
 function drawCustom(){
   const cat = $('cd').value;
@@ -559,16 +662,27 @@ function fillValues(){
 }
 function resetFilters(){
   $('q').value = $('d1').value = $('d2').value = '';
-  $('fc').value = ''; fillValues(); applyFilters();
+  $('fc').value = ''; $('qv').value = ''; fillValues(); applyFilters();
 }
 function applyFilters(keepPage = false){
   const q = $('q').value.trim().toLowerCase(), from = $('d1').value, to = $('d2').value, col = $('fc').value, val = $('fv').value;
+  const view = stages.length >= 2 ? $('qv').value : '';
   const A = from ? new Date(from + 'T00:00') : null, B = to ? new Date(to + 'T23:59:59.999') : null;
   filtered = rows.filter(r => {
     if(col && val && cellText(r, col) !== val) return false;
     if(mainDate && (A || B)){ const d = getDate(r, mainDate); if(!d || (A && d < A) || (B && d > B)) return false; }
+    if(view){
+      const i = orderInfo(r);
+      if((view === 'open' && !i.open) || (view === 'late' && !i.late) || (view === 'issues' && !i.issue) ||
+         (view === 'cancelled' && !i.cancelled) || (view === 'done' && !i.done)) return false;
+    }
     return !q || rowText(r).includes(q);
   });
+  // لو الملف فيه أكتر من صف لنفس الأوردر (صف لكل منتج) نعدّ الأوردر مرة واحدة
+  if(hasDupIds){
+    const seen = new Set();
+    orders = filtered.filter(r => { const k = cellText(r, special.id); if(!k) return true; if(seen.has(k)) return false; seen.add(k); return true; });
+  }else orders = filtered;
   if(!keepPage) page = 0;
   render();
 }
@@ -579,49 +693,56 @@ function render(){
 
 /* ---------- الأرقام الرئيسية ---------- */
 function computeKpis(){
-  const n = filtered.length, list = [{key:'total', value:fmtNum(n), color:'--ink'}];
-  const pct = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '—';
+  const list = [], total = orders.length;
   if(stages.length >= 2){
-    const created = stageCol('created'), shipped = stageCol('shipped'), delivered = stageCol('delivered');
-    const returned = exitCol('returned'), cancelled = exitCol('cancelled');
-    // التسليم والمرتجع بيتقسموا على المشحون، مش على كل الطلبات
-    const base = shipped ? countWith(shipped) : n, note = shipped ? t('ofShipped') : '';
-    if(delivered) list.push({key:'delivered', value:pct(countWith(delivered), base), color:'--grn', note});
-    if(returned) list.push({key:'returned', value:pct(countWith(returned), base), color:'--red', note});
-    if(cancelled) list.push({key:'cancelled', value:pct(countWith(cancelled), n), color:'--amb'});
-    if(created && shipped){
-      const s = durationStats(created, shipped);
-      list.push({key:'c2s', value:fmtHours(s.median), color:'--tea', note:s.n ? `${t('avg')} ${fmtHours(s.avg)} · P90 ${fmtHours(s.p90)}` : ''});
-      if(delivered){
-        const d = durationStats(created, delivered);
-        list.push({key:'cycle', value:fmtHours(d.median), color:'--tea', note:d.n ? `${t('avg')} ${fmtHours(d.avg)} · P90 ${fmtHours(d.p90)}` : ''});
-      }
-      const open = openOrders();
-      list.push({key:'open', value:fmtNum(open.length), color:'--amb', note:refTime ? `${t('asOf')} ${dayKey(new Date(refTime))}` : ''});
-      // التأخير: المشحون بعد الحد + المفتوح اللي عدّى الحد
-      let late = 0, eligible = 0;
-      filtered.forEach(r => {
-        const a = getDate(r, created), b = getDate(r, shipped);
-        if(a && b && b >= a){ eligible++; if((b - a) / HOUR > settings.sla) late++; }
-      });
-      open.forEach(r => { if((refTime - getDate(r, created)) / HOUR > settings.sla){ eligible++; late++; } });
-      list.push({key:'sla', value:pct(late, eligible), color:'--red', note:`> ${settings.sla} ${t('h')} · ${t('inclOpen')}`});
+    const shipped = stageCol('shipped'), shippedN = countWith(shipped);
+    list.push({key:'total', title:t('k_total'), value:fmtNum(total), color:'--ink'});
+    stages.slice(1).forEach(s => {
+      const c = countWith(s.col);
+      if(s.key === 'delivered' && shipped) list.push({key:'n_delivered', title:t('k_n_delivered'), value:fmtNum(c), color:'--grn', note:`${pct(c, shippedN)} ${t('ofShipped')}`});
+      else list.push({key:'n_' + s.key, title:t('k_n_' + s.key), value:fmtNum(c), color:s.key === 'shipped' ? '--grn' : '--tea', note:`${pct(c, total)} ${t('ofTotal')}`});
+    });
+    const ret = exitCol('returned'), can = exitCol('cancelled');
+    if(ret){ const c = countWith(ret); list.push({key:'returned', title:t('k_returned'), value:fmtNum(c), color:'--red', note:shipped ? `${pct(c, shippedN)} ${t('ofShipped')}` : `${pct(c, total)} ${t('ofTotal')}`}); }
+    if(can){ const c = countWith(can); list.push({key:'cancelled', title:t('k_cancelled'), value:fmtNum(c), color:'--amb', note:`${pct(c, total)} ${t('ofTotal')}`}); }
+    const infos = orders.map(orderInfo);
+    list.push({key:'issues', title:t('k_issues'), value:fmtNum(infos.filter(i => i.issue).length), color:'--red', note:t('issuesNote')});
+    list.push({key:'open', title:t('k_open'), value:fmtNum(infos.filter(i => i.open).length), color:'--amb', note:refTime ? `${t('asOf')} ${fmtDateTime(new Date(refTime))}` : ''});
+    // التأخير: اللي اتشحن بعد الحد + المفتوح اللي عدّى الحد
+    const first = stages[0].col, end = shipped || stages.at(-1).col;
+    let late = 0, eligible = 0;
+    orders.forEach((r, i) => {
+      const a = getDate(r, first), b = getDate(r, end);
+      if(a && b && b >= a){ eligible++; if((b - a) / HOUR > settings.sla) late++; }
+      else if(infos[i].late){ eligible++; late++; }
+    });
+    list.push({key:'sla', title:t('k_sla'), value:pct(late, eligible), color:'--red', note:`> ${settings.sla} ${t('h')} · ${t('inclOpen')}`});
+    for(let i = 1; i < stages.length; i++){
+      const a = stages[i - 1], b = stages[i], s = durationStats(a.col, b.col);
+      if(s.n) list.push({key:`d_${a.key}_${b.key}`, title:`${t('dur')} ${t('s_' + a.key)}${arrow()}${t('s_' + b.key)}`, value:fmtHours(s.median), color:'--tea', note:durNote(s)});
+    }
+    const si = stages.findIndex(s => s.key === 'shipped');
+    if(si > 1){ const s = durationStats(first, shipped); if(s.n) list.push({key:'c2s', title:t('k_c2s'), value:fmtHours(s.median), color:'--tea', note:durNote(s)}); }
+    if(special.amount){
+      const v = orders.map(r => parseNum(r[special.amount])).filter(isFinite), sum = v.reduce((a, b) => a + b, 0), unit = unitOf(special.amount);
+      list.push({key:'amount', title:t('k_amount'), value:fmtNum(sum) + (unit ? ' ' + unit : ''), color:'--grn', note:`${t('perOrder')} ${fmtNum(v.length ? sum / v.length : 0)}`});
     }
   }else{
-    list.push({key:'cols', value:headers.length, color:'--tea'});
+    list.push({key:'records', title:t(special.id ? 'k_total' : 'k_records'), value:fmtNum(total), color:'--ink'});
+    list.push({key:'cols', title:t('k_cols'), value:fmtNum(headers.length), color:'--tea'});
     const nm = headers.find(h => types[h] === 'num');
     if(nm){
       const v = filtered.map(r => parseNum(r[nm])).filter(isFinite), s = v.reduce((a, b) => a + b, 0);
-      list.push({key:'sum', value:fmtNum(s), color:'--grn', label:nm}, {key:'avg', value:fmtNum(v.length ? s / v.length : 0), color:'--amb', label:nm});
+      list.push({key:'sum', title:`${t('k_sum')} ${nm}`, value:fmtNum(s), color:'--grn'}, {key:'avg', title:`${t('k_avg')} ${nm}`, value:fmtNum(v.length ? s / v.length : 0), color:'--amb'});
     }
   }
   return list;
 }
 function renderKpis(){
   const list = computeKpis();
-  kpiKeys = list.map(k => k.key);
+  kpiList = list.map(k => ({key:k.key, title:k.title}));
   $('kp').innerHTML = list.filter(k => !settings.hideKpi[k.key]).map(k =>
-    `<div class="k" style="--c:var(${k.color})"><small>${esc(t('k_' + k.key) + (k.label ? ' ' + k.label : ''))}</small><b>${esc(k.value)}</b>${k.note ? `<span class="note">${esc(k.note)}</span>` : ''}</div>`
+    `<div class="k" style="--c:var(${k.color})"><small>${esc(k.title)}</small><b>${esc(k.value)}</b>${k.note ? `<span class="note">${esc(k.note)}</span>` : ''}</div>`
   ).join('');
 }
 
@@ -694,7 +815,7 @@ function openPanel(){
   const dateCols = headers.filter(h => types[h] === 'date');
   let h = `<h3>${esc(t('custom'))}</h3>
     <label for="p_title">${esc(t('name'))}</label><input id="p_title" data-act="title" value="${esc(settings.title)}">
-    <label for="p_sla" style="margin-top:8px">${esc(t('sla'))}</label><input id="p_sla" type="number" min="1" data-act="sla" value="${settings.sla}">`;
+    <label for="p_sla" style="margin-top:8px">${esc(t('sla'))}</label><input id="p_sla" type="number" min="0.5" step="0.5" data-act="sla" value="${settings.sla}">`;
   if(dateCols.length){
     h += `<h4 style="margin-top:12px">${esc(t('map'))}</h4><div class="row">` +
       [...STAGE_PATTERNS, ...EXIT_PATTERNS].map(([k]) => {
@@ -709,8 +830,8 @@ function openPanel(){
     `<div class="li"><label class="ck"><input type="checkbox" data-act="toggle-card" data-id="${id}"${settings.hide[id] ? '' : ' checked'}> ${esc(t('c_' + id))}</label>` +
     `<span><button class="s" data-act="move" data-idx="${i}" data-d="-1" aria-label="${esc(t('a_up'))}">▲</button> <button class="s" data-act="move" data-idx="${i}" data-d="1" aria-label="${esc(t('a_down'))}">▼</button></span></div>`
   ).join('');
-  if(kpiKeys.length) h += `<h4 style="margin-top:12px">${esc(t('kpis'))}</h4>` + kpiKeys.map(k =>
-    `<label class="ck"><input type="checkbox" data-act="toggle-kpi" data-id="${k}"${settings.hideKpi[k] ? '' : ' checked'}> ${esc(t('k_' + k))}</label>`).join('');
+  if(kpiList.length) h += `<h4 style="margin-top:12px">${esc(t('kpis'))}</h4>` + kpiList.map(k =>
+    `<label class="ck"><input type="checkbox" data-act="toggle-kpi" data-id="${esc(k.key)}"${settings.hideKpi[k.key] ? '' : ' checked'}> ${esc(k.title)}</label>`).join('');
   h += `<div class="bar"><button class="s" data-act="reset-settings">${esc(t('reset'))}</button><button data-act="close">${esc(t('done'))}</button></div>`;
   openModal(h);
 }
@@ -773,7 +894,7 @@ $('btnExp').addEventListener('click', () => exportCsv(false));
 $('btnExpAll').addEventListener('click', () => exportCsv(true));
 $('btnPrint').addEventListener('click', () => window.print());
 
-$('file').addEventListener('change', e => { readFile(e.target.files[0]); e.target.value = ''; }); // يسمح باختيار نفس الملف تاني
+$('file').addEventListener('change', e => { readFile(e.target.files[0]); e.target.value = ''; });
 const drop = document.querySelector('.drop');
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
@@ -781,7 +902,7 @@ drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('
 
 let searchTimer;
 $('q').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => applyFilters(), 250); });
-['d1','d2','fv'].forEach(id => $(id).addEventListener('change', () => applyFilters()));
+['d1','d2','fv','qv'].forEach(id => $(id).addEventListener('change', () => applyFilters()));
 $('fc').addEventListener('change', () => { fillValues(); applyFilters(); });
 ['cd','cm','ca','ct','cn'].forEach(id => $(id).addEventListener('change', drawCustom));
 
@@ -821,7 +942,7 @@ mc.addEventListener('input', e => {
 });
 mc.addEventListener('change', e => {
   const el = e.target, act = el.dataset.act;
-  if(act === 'sla'){ settings.sla = Math.max(1, +el.value || 24); saveSettings(); if(rows.length) render(); }
+  if(act === 'sla'){ settings.sla = Math.max(.5, +el.value || 24); saveSettings(); infoCache = new WeakMap(); if(rows.length) applyFilters(true); }
   else if(act === 'toggle-card'){ settings.hide[el.dataset.id] = !el.checked; saveSettings(); applyLayout(); if(rows.length) drawAllCharts(); }
   else if(act === 'toggle-kpi'){ settings.hideKpi[el.dataset.id] = !el.checked; saveSettings(); renderKpis(); }
   else if(act === 'map'){
@@ -843,4 +964,4 @@ applyTheme(settings.theme || (matchMedia('(prefers-color-scheme: dark)').matches
 applyLang();
 </script>
 </body>
- </html>
+</html>
