@@ -1,967 +1,451 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dashboard Pro</title>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-:root{--bg:#eceff3;--card:#fff;--ink:#14213d;--mut:#5b6678;--line:#d9dfe7;--amb:#f2a900;--grn:#1b9a6c;--red:#d64545;--tea:#1f7a8c}
-[data-theme=dark]{--bg:#0e1522;--card:#172033;--ink:#e8edf6;--mut:#9aa7bb;--line:#2a3750}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'Segoe UI',Tahoma,system-ui,sans-serif}
-header{background:#14213d;color:#fff;padding:14px 16px 20px;border-bottom:8px solid var(--amb);border-image:repeating-linear-gradient(135deg,#f2a900 0 14px,#14213d 14px 28px) 8}
-.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-header h1{margin:0;font-size:22px}
-header p{margin:4px 0 0;font-size:13px;opacity:.8}
-header button{background:#ffffff26;padding:7px 12px}
-main{max-width:1280px;margin:14px auto 40px;padding:0 12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
-h3,h4{margin:0 0 8px;font-size:15px}
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:3px}
-input,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
-input[type=checkbox]{width:auto}
-button{border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;background:#14213d;color:#fff}
-button.s{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
-button:disabled{opacity:.4;cursor:default}
-button:focus-visible,input:focus-visible,select:focus-visible,th:focus-visible,.drop:focus-within{outline:3px solid var(--amb);outline-offset:1px}
-.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
-.mut{color:var(--mut);font-size:13px}
-.drop{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border:2px dashed var(--line);border-radius:10px;padding:18px;cursor:pointer;text-align:center;font-size:15px;color:var(--ink)}
-.drop.over{border-color:var(--amb)}
-.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
-.k{background:var(--card);border:1px solid var(--line);border-inline-start:5px solid var(--c);border-radius:10px;padding:10px 12px;min-width:0}
-.k small{color:var(--mut);display:block;font-size:12px}
-.k b{font-size:23px;line-height:1.3;overflow-wrap:anywhere}
-.k .note{display:block;color:var(--mut);font-size:11.5px}
-#cards{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
-#k_table,#k_custom{grid-column:1/-1}
-@media(min-width:820px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}#cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
-.hd h3{margin:0}
-.ty{width:auto;padding:4px 6px;font-size:12px}
-.ch{height:270px;position:relative}
-.ch.tall{height:380px}
-.tw{overflow:auto;max-height:520px}
-table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
-th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:start}
-th{background:var(--bg);position:sticky;top:0;cursor:pointer;user-select:none}
-.md{position:fixed;inset:0;background:#0009;z-index:9;display:flex;align-items:center;justify-content:center;padding:12px}
-.mb{background:var(--card);border-radius:12px;padding:16px;width:min(680px,100%);max-height:90vh;overflow:auto}
-.li{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
-.ck{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:400;color:var(--ink)}
-.badge{background:var(--amb);color:#14213d;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700}
-.hidden{display:none!important}
-@media print{
-  header button,.bar button,.ty,#sourceCard,.act,#dirty{display:none!important}
-  body{background:#fff}
-  .tw{max-height:none;overflow:visible}
-  th{position:static}
-  .card,.k{break-inside:avoid}
+:root{
+  --bg:#eef0f4;--surface:#ffffff;--soft:#f6f7fa;--ink:#141a2b;--muted:#5b6478;--line:#dfe3ea;
+  --accent:#f5b400;--accent-ink:#1d1600;
+  --ok:#11826a;--warn:#b86200;--bad:#c2343a;--info:#2560c4;--proc:#7a4fd0;--new:#6b7489;
+  color-scheme:light;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1220;--surface:#141c2e;--soft:#19233a;--ink:#e8ecf5;--muted:#95a2bc;--line:#26314a;
+  --ok:#3cc49f;--warn:#f0a03c;--bad:#f06a6f;--info:#6aa3ff;--proc:#a888f0;--new:#8a93a8;color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0c1220;--surface:#141c2e;--soft:#19233a;--ink:#e8ecf5;--muted:#95a2bc;--line:#26314a;
+  --ok:#3cc49f;--warn:#f0a03c;--bad:#f06a6f;--info:#6aa3ff;--proc:#a888f0;--new:#8a93a8;color-scheme:dark;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 14px 40px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:12px}
+h1{margin:0;font-size:1.6rem;font-weight:700;letter-spacing:-.01em}
+.sub{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.stripe{height:6px;border-radius:3px;margin:0 0 16px;background:repeating-linear-gradient(-45deg,var(--accent) 0 12px,transparent 12px 24px)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.panel h2{margin:0 0 10px;font-size:1.05rem;font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 220px}
+button,.btn{font:inherit;font-size:.9rem;font-weight:600;border:1px solid var(--line);background:var(--soft);color:var(--ink);padding:9px 14px;border-radius:10px;cursor:pointer}
+button.primary,.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+button:focus-visible,input:focus-visible,select:focus-visible,.btn:focus-within{outline:2px solid var(--info);outline-offset:2px}
+input[type=text],input[type=number],select{font:inherit;font-size:.9rem;width:100%;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:var(--soft);color:var(--ink)}
+label.f{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+.file{position:relative;overflow:hidden}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.hint{font-size:.82rem;color:var(--muted);margin:8px 0 0}
+.empty{text-align:center;padding:48px 16px;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-size:1.15rem;margin-bottom:6px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;border-inline-start:4px solid var(--c,var(--line))}
+.kpi .l{font-size:.82rem;color:var(--muted)}
+.kpi .v{font-size:1.65rem;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:.8rem;color:var(--muted)}
+.kpi.hero{grid-column:span 2;background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.kpi.hero .l,.kpi.hero .s{color:inherit;opacity:.75}
+.kpi.hero .v{font-size:2.3rem}
+@media (max-width:420px){.kpi.hero{grid-column:span 1}}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.grid2 .panel{margin-bottom:0}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:grid;grid-template-columns:minmax(90px,30%) 1fr auto;gap:10px;align-items:center;font-size:.88rem}
+.bar .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .track{height:12px;background:var(--soft);border-radius:6px;overflow:hidden}
+.bar .fill{height:100%;border-radius:6px;background:var(--c,var(--info));min-width:2px}
+.bar .num{font-variant-numeric:tabular-nums;color:var(--muted);min-width:70px;text-align:left}
+.cols{display:flex;align-items:flex-end;gap:4px;height:170px;overflow-x:auto;padding-top:18px}
+.col{flex:1 0 18px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative}
+.col .b{width:100%;background:var(--info);border-radius:4px 4px 0 0;min-height:2px}
+.col .t{position:absolute;top:-2px;font-size:.68rem;color:var(--muted)}
+.col .d{font-size:.66rem;color:var(--muted);margin-top:4px;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.78rem;padding:3px 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--muted)}
+.chip.on{color:var(--ink);border-color:var(--ok)}
+.chip.off{opacity:.6;text-decoration:line-through}
+details summary{cursor:pointer;color:var(--muted);font-size:.88rem}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:.82rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
+th{background:var(--soft);font-weight:600;position:sticky;top:0}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;font-weight:600;color:#fff;background:var(--c)}
+.pager{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.85rem;color:var(--muted)}
+.hidden{display:none!important}
+@media (prefers-reduced-motion:no-preference){.fill,.col .b{transition:width .4s ease,height .4s ease}}
+@media print{.noprint{display:none!important}body{background:#fff}}
 </style>
 </head>
 <body>
-<header>
-  <div class="top">
-    <h1 id="h1">Dashboard Pro</h1>
+<div class="wrap">
+  <header class="top">
     <div>
-      <button id="btnPanel" data-i="custom"></button>
-      <button id="btnTheme" data-a="a_theme"></button>
-      <button id="btnLang" data-a="a_lang"></button>
+      <h1>Dashboard Pro</h1>
+      <p class="sub">ارفع ملف الطلبات وشوف التوصيل والسرعة والتأخير في مكان واحد.</p>
     </div>
-  </div>
-  <p data-i="sub"></p>
-</header>
+    <div class="row noprint">
+      <button id="themeBtn" type="button" aria-label="تبديل الوضع الليلي">🌓</button>
+      <button type="button" onclick="window.print()">طباعة / PDF</button>
+    </div>
+  </header>
+  <div class="stripe"></div>
 
-<main>
-  <section class="card" id="sourceCard">
+  <section class="panel noprint">
     <div class="row">
-      <label class="drop">
-        <input type="file" id="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" hidden>
-        <b data-i="file"></b><small class="mut" id="st" data-i="drag" aria-live="polite"></small>
-      </label>
-      <div>
-        <label for="url" data-i="url"></label>
-        <input id="url" data-p="ph_url" inputmode="url">
-        <div class="bar">
-          <button id="btnSheet" data-i="ls"></button>
-          <button id="btnSample" class="s" data-i="sample"></button>
-        </div>
-      </div>
+      <span class="btn primary file">اختار ملف CSV<input id="fileIn" type="file" accept=".csv,text/csv"></span>
+      <div class="grow"><input id="sheetIn" type="text" placeholder="أو الصق لينك Google Sheets (لازم يكون متاح لأي حد معاه اللينك)"></div>
+      <button id="sheetBtn" type="button">حمّل الشيت</button>
+      <button id="sampleBtn" type="button">جرّب بيانات تجريبية</button>
     </div>
+    <p class="hint" id="loadMsg">مفيش ملف لسه.</p>
   </section>
 
-  <div id="app" class="hidden">
-    <section class="card" style="margin-top:12px">
+  <div id="emptyState" class="panel empty">
+    <strong>ارفع ملف الطلبات عشان الأرقام تظهر</strong>
+    الداشبورد بيتعرّف لوحده على أعمدة زي ORDER CREATED AT و ORDER SHIPPED AT و ORDER DELIVERED AT.
+  </div>
+
+  <div id="dash" class="hidden">
+    <section class="panel noprint">
       <div class="row">
-        <div><label for="q" data-i="search"></label><input id="q" data-p="ph_q" type="search"></div>
-        <div id="qvw"><label for="qv" data-i="view"></label><select id="qv">
-          <option value="" data-i="v_all"></option><option value="open" data-i="v_open"></option><option value="late" data-i="v_late"></option>
-          <option value="issues" data-i="v_issues"></option><option value="cancelled" data-i="v_cancelled"></option><option value="done" data-i="v_done"></option>
-        </select></div>
-        <div id="dw"><label for="d1" data-i="from"></label><input type="date" id="d1"></div>
-        <div id="dw2"><label for="d2" data-i="to"></label><input type="date" id="d2"></div>
-        <div id="fw"><label for="fc" data-i="filter"></label><select id="fc"></select></div>
-        <div id="fvw"><label for="fv" data-i="value"></label><select id="fv"></select></div>
+        <div class="grow"><label class="f" for="q">بحث</label><input id="q" type="text" placeholder="رقم طلب، مدينة، أي كلمة"></div>
+        <div style="flex:1 1 150px"><label class="f" for="stF">الحالة</label><select id="stF"><option value="">كل الحالات</option></select></div>
+        <div style="flex:1 1 170px"><label class="f" for="catF">فلتر حسب</label><select id="catF"><option value="">بدون</option></select></div>
+        <div style="flex:1 1 150px"><label class="f" for="catV">القيمة</label><select id="catV"><option value="">الكل</option></select></div>
+        <div style="flex:0 1 120px"><label class="f" for="delayD">متأخر بعد (أيام)</label><input id="delayD" type="number" min="1" value="3"></div>
       </div>
-      <div class="bar"><span id="cnt" class="mut"></span><button id="btnClear" class="s" data-i="clear"></button></div>
+      <div class="row" style="justify-content:space-between;margin-top:10px">
+        <span class="hint" id="countMsg" style="margin:0"></span>
+        <button id="clearBtn" type="button">مسح الفلاتر</button>
+      </div>
     </section>
 
-    <div class="kpis" id="kp"></div>
+    <div class="kpis" id="kpis"></div>
 
-    <div id="cards">
-      <div class="card" id="k_custom">
-        <h3 data-i="c_custom"></h3>
-        <div class="row">
-          <div><label for="cd" data-i="cat"></label><select id="cd"></select></div>
-          <div><label for="cm" data-i="num"></label><select id="cm"></select></div>
-          <div><label for="ca" data-i="calc"></label><select id="ca">
-            <option value="sum" data-i="sum"></option><option value="avg" data-i="avg"></option><option value="count" data-i="count"></option>
-          </select></div>
-          <div><label for="ct" data-i="shape"></label><select id="ct">
-            <option value="bar" data-i="bar"></option><option value="hbar" data-i="hbar"></option><option value="line" data-i="line"></option><option value="pie" data-i="pie"></option>
-          </select></div>
-          <div><label for="cn" data-i="top"></label><select id="cn">
-            <option value="5">5</option><option value="10" selected>10</option><option value="20">20</option><option value="0" data-i="all2"></option>
-          </select></div>
-        </div>
-        <div class="ch" style="margin-top:10px"><canvas id="g_custom"></canvas></div>
-      </div>
-
-      <div class="card" id="k_table">
-        <h3 data-i="c_table"></h3>
-        <div class="bar" style="justify-content:flex-start;margin:0 0 8px">
-          <button id="btnAdd" data-i="add"></button>
-          <button id="btnExp" class="s" data-i="e1"></button>
-          <button id="btnExpAll" class="s" data-i="e2"></button>
-          <button id="btnPrint" class="s" data-i="pr"></button>
-          <span id="dirty" class="badge hidden" data-i="dirty"></span>
-        </div>
-        <div class="tw" id="tw"></div>
-        <div class="bar" id="pg"></div>
-      </div>
+    <div class="grid2">
+      <section class="panel"><h2>الحالة الحالية للطلبات</h2><div class="bars" id="statusBars"></div></section>
+      <section class="panel"><h2>مراحل الطلب (وصل لكل مرحلة كام طلب)</h2><div class="bars" id="funnel"></div></section>
     </div>
-  </div>
-</main>
 
-<div id="md" class="md hidden" role="dialog" aria-modal="true"><div class="mb" id="mc"></div></div>
+    <section class="panel" style="margin-top:14px"><h2>الطلبات حسب يوم الإنشاء</h2><div class="cols" id="daily"></div></section>
+
+    <section class="panel">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h2 style="margin:0">توزيع حسب</h2>
+        <div style="flex:0 1 240px"><select id="breakCol" aria-label="عمود التوزيع"></select></div>
+      </div>
+      <div class="bars" id="breakdown"></div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin:0">البيانات</h2>
+        <div class="row noprint">
+          <button id="expF" type="button">تصدير النتائج CSV</button>
+          <button id="expDelay" type="button">تصدير المتأخر CSV</button>
+        </div>
+      </div>
+      <div class="tablewrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+      <div class="pager noprint">
+        <button id="prev" type="button">السابق</button>
+        <span id="pageInfo"></span>
+        <button id="next" type="button">التالي</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <details>
+        <summary>الأعمدة اللي الداشبورد اتعرّف عليها</summary>
+        <div class="chips" id="mapChips" style="margin-top:10px"></div>
+        <p class="hint" id="emptyCols"></p>
+      </details>
+    </section>
+  </div>
+</div>
 
 <script>
-'use strict';
-/* =====================================================================
-   Dashboard Pro — لوحة تقارير الأوردرات
-   ===================================================================== */
+(function(){
+const $ = id => document.getElementById(id);
+const S = {rows:[], headers:[], cols:{}, filtered:[], page:0, asOf:null, usable:[]};
+const PAGE = 25;
 
-/* ---------- ثوابت ---------- */
-const HOUR = 36e5, PAGE_SIZE = 50;
-const COLORS = ['#1f7a8c','#f2a900','#1b9a6c','#d64545','#7b5ea7','#84a98c','#e07a5f','#4c78a8'];
-
-// أنماط أعمدة المراحل: الأدق الأول، وبعدين الأعم (إنجليزي + عربي)
-const STAGE_PATTERNS = [
-  ['created',   [/^order\s*created\s*at$/i, /^(order\s*)?(created|creation)(\s*(at|date|time))?$/i, /تاريخ\s*(إنشاء|انشاء)?\s*الطلب|إنشاء|انشاء/i, /creat|placed|order\s*date/i]],
-  ['picked',    [/^order\s*picked\s*at$/i, /picked|التقاط/i, /pick/i]],
-  ['packed',    [/^order\s*packed\s*at$/i, /packed|تعبئة|تغليف/i, /pack/i]],
-  ['shipped',   [/^order\s*shipped\s*at$/i, /shipped|dispatched|تم\s*الشحن|شحن/i]],
-  ['delivered', [/^order\s*delivered\s*at$/i, /delivered|تسليم|توصيل/i]]
+const STATUS = {
+  delivered:{t:'تم التوصيل', c:'var(--ok)'},
+  transit:{t:'في الطريق', c:'var(--info)'},
+  processing:{t:'قيد التجهيز', c:'var(--proc)'},
+  new:{t:'جديد', c:'var(--new)'},
+  returned:{t:'مرتجع', c:'var(--warn)'},
+  cancelled:{t:'ملغي', c:'var(--bad)'}
+};
+const STAGES = [
+  ['created','تم الإنشاء',/order\s*created/i],
+  ['hub','اتعيّن على هب',/hub\s*assigned/i],
+  ['picked','اتلقط',/picked/i],
+  ['consolidated','اتجمّع',/consolidat/i],
+  ['packed','اتغلّف',/packed/i],
+  ['ready','جاهز للشحن',/ready\s*to\s*ship/i],
+  ['shipped','اتشحن',/shipped/i],
+  ['delivered','اتوصّل',/deliver(ed)?\s*(at|date)|^delivered|order\s*delivered/i]
 ];
-const EXIT_PATTERNS = [
-  ['returned',  [/^order\s*returned\s*at$/i, /returned|مرتجع|ارتجاع|إرجاع|ارجاع/i]],
-  ['cancelled', [/^order\s*cancel+ed\s*at$/i, /cancel|إلغاء|الغاء|ملغ/i]]
-];
-const ID_HEADER = /(^|[\s_-])(id|reference|ref|code|sku|barcode|phone|mobile|awb|tracking)([\s_-]|$)|رقم|كود|موبايل|تليفون|هاتف/i;
-
-/* ---------- الترجمة ---------- */
-const I18N = {
-ar:{sub:'ارفع ملف الأوردرات وشوف كل التفاصيل جاهزة: البيك، الباك، الشحن، المدد والتأخير.',custom:'تخصيص',file:'اختار ملف CSV',drag:'أو اسحب الملف هنا',url:'رابط Google Sheets (اختياري)',ph_url:'الصق الرابط هنا',ls:'تحميل الشيت',sample:'جرّب بيانات مثال',search:'بحث',ph_q:'اكتب أي كلمة',from:'من تاريخ',to:'إلى تاريخ',filter:'فلتر حسب',value:'القيمة',none:'بدون فلتر',all:'كل القيم',clear:'مسح الفلاتر',rows:'سجل',of:'من',
-view:'عرض',v_all:'كل الأوردرات',v_open:'المفتوحة (لسه ما اتشحنتش)',v_late:'المتأخرة',v_issues:'اللي فيها مشاكل',v_cancelled:'الملغية',v_done:'اللي اتشحنت',
-k_total:'إجمالي الأوردرات',k_records:'إجمالي السجلات',k_n_picked:'اتعمل بيك',k_n_packed:'اتعمل باك',k_n_shipped:'اتشحن',k_n_delivered:'اتسلّم',k_returned:'مرتجع',k_cancelled:'ملغي',k_issues:'فيها مشاكل',k_open:'لسه ما اتشحنتش',k_sla:'نسبة التأخير',k_c2s:'مدة الإنشاء للشحن',k_amount:'قيمة الأوردرات',k_cols:'عدد الأعمدة',k_sum:'مجموع',k_avg:'متوسط',
-ofTotal:'من الإجمالي',ofShipped:'من المشحون',issuesNote:'ملغي + مرتجع + فشل + متأخر',inclOpen:'شامل المفتوح المتأخر',asOf:'لحد',perOrder:'متوسط الأوردر',dur:'مدة',min:'دقيقة',hr:'ساعة',day:'يوم',h:'س',
-c_funnel:'مسار الأوردر: كام أوردر وصل لكل مرحلة',c_backlog:'الأوردرات المفتوحة مستنية إيه',c_issues:'الأوردرات اللي فيها مشاكل',c_status:'حالة الأوردرات',c_stage:'المدة المعتادة بين المراحل (ساعات)',c_hour:'حركة الأوردرات حسب الساعة',c_aging:'عمر الأوردرات المفتوحة (ساعات)',c_cycle:'مدة الإنشاء للشحن (ساعات)',c_staff:'إنتاجية الموظفين (عدد الأوردرات)',c_daily:'الأوردرات كل يوم',c_wday:'الأوردرات حسب يوم الأسبوع',c_custom:'رسم حسب اختيارك',c_table:'البيانات',
-s_created:'إنشاء',s_picked:'بيك',s_packed:'باك',s_shipped:'شحن',s_delivered:'تسليم',s_returned:'مرتجع',s_cancelled:'إلغاء',orders:'الأوردرات',open:'مفتوحة',hours:'ساعات',
-waiting:'مستني',onTime:'في الوقت',late:'متأخر',lateAt:'متأخر في',i_cancelled:'ملغي',i_returned:'مرتجع',i_failed:'فشل التوصيل',noIssues:'مفيش مشاكل',picks:'بيك',packs:'باك',
-cat:'التصنيف',num:'الرقم',calc:'الحساب',shape:'الشكل',top:'عدد التصنيفات',sum:'المجموع',avg:'المتوسط',count:'العدد',bar:'أعمدة',hbar:'أعمدة أفقية',line:'خط',pie:'دائري',rowcnt:'عدد السجلات',all2:'الكل',
-name:'اسم الداشبورد',sla:'حد التأخير (ساعات من إنشاء الأوردر لحد الشحن)',map:'ربط أعمدة التواريخ بالمراحل',auto:'تلقائي',missing:'مش موجود',cards:'الرسومات والأقسام (أظهر / أخفي / رتّب)',kpis:'الأرقام الرئيسية',reset:'رجوع للافتراضي',done:'تم',
-add:'إضافة صف',edit:'تعديل',save:'حفظ',cancel:'إلغاء',del:'حذف',sure:'متأكد من الحذف؟',e1:'تصدير النتائج CSV',e2:'تصدير الكل CSV',pr:'طباعة / PDF',prev:'السابق',next:'التالي',page:'صفحة',
-loaded:'تم تحميل',reading:'جاري القراءة...',err:'خطأ',e_empty:'الملف فاضي أو مش مفهوم',e_url:'الرابط مش رابط Google Sheets صحيح',e_net:'مش قادر أوصل للشيت. خليه متاح لأي حد معاه الرابط، أو نزّله CSV وارفعه',e_priv:'الشيت خاص، نزّله CSV وارفعه',e_xlsx:'ده ملف Excel، احفظه بصيغة CSV الأول',empty:'(فارغ)',
-dirty:'فيه تعديلات مش محفوظة، صدّر الكل CSV',lose:'التعديلات اللي عملتها هتضيع. تكمل؟',a_theme:'تبديل الوضع الليلي',a_lang:'تغيير اللغة',a_type:'نوع الرسم',a_up:'لفوق',a_down:'لتحت',
-days:['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']},
-en:{sub:'Upload your orders file and get everything ready: pick, pack, ship, durations and delays.',custom:'Customize',file:'Choose CSV file',drag:'or drag the file here',url:'Google Sheets link (optional)',ph_url:'Paste the link here',ls:'Load sheet',sample:'Try sample data',search:'Search',ph_q:'Type any word',from:'From date',to:'To date',filter:'Filter by',value:'Value',none:'No filter',all:'All values',clear:'Clear filters',rows:'records',of:'of',
-view:'Show',v_all:'All orders',v_open:'Open (not shipped yet)',v_late:'Late',v_issues:'With problems',v_cancelled:'Cancelled',v_done:'Shipped',
-k_total:'Total orders',k_records:'Total records',k_n_picked:'Picked',k_n_packed:'Packed',k_n_shipped:'Shipped',k_n_delivered:'Delivered',k_returned:'Returned',k_cancelled:'Cancelled',k_issues:'With problems',k_open:'Not shipped yet',k_sla:'Late rate',k_c2s:'Create to ship',k_amount:'Orders value',k_cols:'Columns',k_sum:'Sum of',k_avg:'Average of',
-ofTotal:'of total',ofShipped:'of shipped',issuesNote:'cancelled + returned + failed + late',inclOpen:'incl. late open orders',asOf:'as of',perOrder:'avg per order',dur:'Time',min:'min',hr:'h',day:'days',h:'h',
-c_funnel:'Order funnel: orders reaching each stage',c_backlog:'What open orders are waiting for',c_issues:'Orders with problems',c_status:'Order status',c_stage:'Typical time between stages (hours)',c_hour:'Order activity by hour',c_aging:'Age of open orders (hours)',c_cycle:'Create-to-ship time (hours)',c_staff:'Staff productivity (orders)',c_daily:'Orders per day',c_wday:'Orders by weekday',c_custom:'Your own chart',c_table:'Data',
-s_created:'Created',s_picked:'Pick',s_packed:'Pack',s_shipped:'Ship',s_delivered:'Deliver',s_returned:'Returned',s_cancelled:'Cancelled',orders:'Orders',open:'Open',hours:'Hours',
-waiting:'Waiting for',onTime:'On time',late:'Late',lateAt:'Late at',i_cancelled:'Cancelled',i_returned:'Returned',i_failed:'Delivery failed',noIssues:'No problems',picks:'Picks',packs:'Packs',
-cat:'Category',num:'Number',calc:'Calculation',shape:'Shape',top:'Top items',sum:'Sum',avg:'Average',count:'Count',bar:'Bars',hbar:'Horizontal bars',line:'Line',pie:'Doughnut',rowcnt:'Record count',all2:'All',
-name:'Dashboard name',sla:'Delay limit (hours from order creation to shipping)',map:'Match date columns to stages',auto:'Auto',missing:'Not in file',cards:'Charts and sections (show / hide / reorder)',kpis:'Key numbers',reset:'Reset to default',done:'Done',
-add:'Add row',edit:'Edit',save:'Save',cancel:'Cancel',del:'Delete',sure:'Delete this row?',e1:'Export results CSV',e2:'Export all CSV',pr:'Print / PDF',prev:'Previous',next:'Next',page:'Page',
-loaded:'Loaded',reading:'Reading...',err:'Error',e_empty:'File is empty or unreadable',e_url:'Not a valid Google Sheets link',e_net:'Can’t reach the sheet. Share it as “Anyone with the link”, or download it as CSV and upload',e_priv:'Sheet is private, download it as CSV and upload',e_xlsx:'This is an Excel file, save it as CSV first',empty:'(empty)',
-dirty:'Unsaved edits, export all as CSV',lose:'Your edits will be lost. Continue?',a_theme:'Toggle dark mode',a_lang:'Change language',a_type:'Chart type',a_up:'Move up',a_down:'Move down',
-days:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']}
+const OTHER = {
+  returned:/order\s*returned|returned\s*at/i,
+  rto:/return\s*to\s*origin|\brto\b/i,
+  cancelled:/cancel+ed\s*at|cancel+ation\s*date/i,
+  status:/^\s*(order\s*)?status\s*$|^state$/i,
+  id:/^\s*order\s*id\s*$|^id$/i
 };
 
-/* ---------- الإعدادات ---------- */
-const defaultSettings = () => ({title:'Dashboard Pro',sla:24,hide:{},order:[],type:{},hideKpi:{},map:{},lang:'ar',theme:null});
-function loadSettings(){
+$('themeBtn').onclick = () => {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = dark ? 'light' : 'dark';
+  try{localStorage.setItem('dp-theme', r.dataset.theme)}catch(e){}
+};
+try{const t=localStorage.getItem('dp-theme'); if(t) document.documentElement.dataset.theme=t;}catch(e){}
+
+const fmt = n => Number(n).toLocaleString('en-US');
+const pct = (a,b) => b ? (a/b*100).toFixed(1)+'%' : '—';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function parseDate(v){
+  if(v==null) return null; const s=String(v).trim(); if(!s) return null;
+  let m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m) return new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m) return new Date(+m[3],m[2]-1,+m[1],+(m[4]||0),+(m[5]||0),+(m[6]||0));
+  const t = Date.parse(s); return isNaN(t) ? null : new Date(t);
+}
+function dur(h){
+  if(h==null||isNaN(h)) return '—';
+  return h < 24 ? h.toFixed(1)+' ساعة' : (h/24).toFixed(1)+' يوم';
+}
+const dayKey = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+
+$('fileIn').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  $('loadMsg').textContent = 'جاري القراءة…';
+  Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>ingest(r, f.name),error:err=>$('loadMsg').textContent='الملف ماتقراش: '+err.message});
+};
+$('sheetBtn').onclick = async () => {
+  const link = $('sheetIn').value.trim();
+  const id = (link.match(/\/d\/([a-zA-Z0-9-_]+)/)||[])[1];
+  if(!id){ $('loadMsg').textContent = 'اللينك مش لينك Google Sheets صحيح.'; return; }
+  const gid = (link.match(/gid=(\d+)/)||[])[1] || '0';
+  $('loadMsg').textContent = 'جاري تحميل الشيت…';
   try{
-    const s = JSON.parse(localStorage.getItem('dp') || '{}');
-    if(s.hk && !s.hideKpi) s.hideKpi = s.hk;
-    delete s.hk;
-    return {...defaultSettings(), ...s};
-  }catch{ return defaultSettings(); }
-}
-function saveSettings(){ try{ localStorage.setItem('dp', JSON.stringify(settings)); }catch{} }
+    const res = await fetch(`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const txt = await res.text();
+    if(/^\s*<!DOCTYPE/i.test(txt)) throw new Error('الشيت مش متاح للعامة');
+    ingest(Papa.parse(txt,{header:true,skipEmptyLines:true}), 'Google Sheet');
+  }catch(err){ $('loadMsg').textContent = 'الشيت ماتحمّلش. خليه متاح لأي حد معاه اللينك وجرّب تاني. ('+err.message+')'; }
+};
+$('sampleBtn').onclick = () => ingest(sample(), 'بيانات تجريبية');
 
-/* ---------- الحالة ---------- */
-let settings = loadSettings(), lang = settings.lang || 'ar';
-let headers = [], rows = [], filtered = [], orders = [], types = {}, monthFirst = {};
-let stages = [], exits = [], special = {}, hasDupIds = false, mainDate = null, refTime = 0, multiDay = false, weekSpan = false;
-let charts = {}, sortState = {col:null, dir:1}, page = 0, kpiList = [], editIndex = -1, dirty = false;
-let dateCache = new WeakMap(), textCache = new WeakMap(), infoCache = new WeakMap(), lastFocus = null;
-
-/* ---------- أدوات عامة ---------- */
-const $ = id => document.getElementById(id);
-const pad2 = n => String(n).padStart(2, '0');
-const t = k => I18N[lang][k] ?? k;
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmtNum = n => Number(n || 0).toLocaleString('en-US', {maximumFractionDigits:1});
-const fmtHours = h => h == null ? '—' : h < 1 ? Math.round(h * 60) + ' ' + t('min') : h < 48 ? h.toFixed(1) + ' ' + t('hr') : (h / 24).toFixed(1) + ' ' + t('day');
-const dayKey = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
-const fmtDateTime = d => dayKey(d) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
-const cellText = (row, col) => String(row[col] ?? '').trim();
-const setStatus = msg => { $('st').textContent = msg; };
-const arrow = () => lang === 'ar' ? ' ← ' : ' → ';
-const pct = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '—';
-
-/* ---------- parsing ---------- */
-const toLatinDigits = s => s.replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776);
-
-// أرقام بعملة أو وحدة زي "685 EGP" أو "1.5 kg"
-const UNIT = '(?:EGP|SAR|AED|USD|KWD|QAR|LE|L\\.E\\.?|kgs?|gm?|grams?|pcs|%|جنيه|ج\\.?م\\.?|ريال|درهم|كجم|كيلو|جم|قطعة|\\$|€|£)';
-const RE_NUM = new RegExp('^(?:' + UNIT + '\\s*)?([-+]?\\d[\\d.,٬٫ ]*?)\\s*(?:' + UNIT + ')?$', 'i');
-const RE_UNIT_END = new RegExp('(' + UNIT + ')\\s*$', 'i');
-function parseNum(v){
-  const s = toLatinDigits(String(v ?? '').trim());
-  if(!s) return NaN;
-  const m = s.match(RE_NUM);
-  return m ? +m[1].replace(/[, ٬]/g, '').replace('٫', '.') : NaN;
-}
-
-const TIME_PART = '(?:[ T]+(\\d{1,2}):(\\d{2})(?::(\\d{2}))?(?:\\.\\d+)?\\s*(AM|PM|ص|م)?)?';
-const RE_YMD = new RegExp('^(\\d{4})[/.-](\\d{1,2})[/.-](\\d{1,2})' + TIME_PART, 'i');
-const RE_DMY = new RegExp('^(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{4})' + TIME_PART, 'i');
-const RE_ISO_TZ = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/i;
-
-function parseDate(value, mFirst = false){
-  const v = toLatinDigits(String(value ?? '').trim());
-  if(!v) return null;
-  if(RE_ISO_TZ.test(v)){ const d = new Date(v); return isNaN(d) ? null : d; }
-  let m = v.match(RE_YMD), y, mo, d;
-  if(m) [y, mo, d] = [+m[1], +m[2], +m[3]];
-  else if((m = v.match(RE_DMY))) [y, d, mo] = mFirst ? [+m[3], +m[2], +m[1]] : [+m[3], +m[1], +m[2]];
-  else return null;
-  let h = +(m[4] || 0);
-  const mi = +(m[5] || 0), ap = (m[7] || '').toUpperCase();
-  if((ap === 'PM' || ap === 'م') && h < 12) h += 12;
-  if((ap === 'AM' || ap === 'ص') && h === 12) h = 0;
-  if(h > 23 || mi > 59) return null;
-  const r = new Date(y, mo - 1, d, h, mi, +(m[6] || 0));
-  return r.getFullYear() === y && r.getMonth() === mo - 1 && r.getDate() === d ? r : null;
-}
-function guessMonthFirst(values){
-  let dayFirst = false, mFirst = false;
-  for(const v of values){
-    const m = toLatinDigits(v).match(/^(\d{1,2})[/.-](\d{1,2})[/.-]\d{4}/);
-    if(!m) continue;
-    if(+m[1] > 12) dayFirst = true; else if(+m[2] > 12) mFirst = true;
-  }
-  return mFirst && !dayFirst;
-}
-/* ---------- end parsing ---------- */
-
-function getDate(row, col){
-  if(!col) return null;
-  let c = dateCache.get(row);
-  if(!c){ c = {}; dateCache.set(row, c); }
-  if(!(col in c)) c[col] = types[col] === 'date' ? parseDate(row[col], monthFirst[col]) : null;
-  return c[col];
-}
-function rowText(row){
-  let s = textCache.get(row);
-  if(s == null){ s = headers.map(h => String(row[h] ?? '')).join('\u0001').toLowerCase(); textCache.set(row, s); }
-  return s;
-}
-function unitOf(col){
-  for(const r of rows){ const s = cellText(r, col); if(s){ const m = s.match(RE_UNIT_END); return m ? m[1] : ''; } }
-  return '';
-}
-
-/* ---------- حالة كل أوردر ---------- */
-const stageCol = k => stages.find(s => s.key === k)?.col || null;
-const exitCol = k => exits.find(s => s.key === k)?.col || null;
-const countWith = col => col ? orders.reduce((n, r) => n + (getDate(r, col) ? 1 : 0), 0) : 0;
-
-function orderInfo(r){
-  let info = infoCache.get(r);
-  if(info) return info;
-  let reached = -1;
-  stages.forEach((s, i) => { if(getDate(r, s.col)) reached = i; });
-  const cancelled = !!getDate(r, exitCol('cancelled')), returned = !!getDate(r, exitCol('returned'));
-  const si = stages.findIndex(s => s.key === 'shipped'), doneIdx = si >= 0 ? si : stages.length - 1;
-  const done = !cancelled && reached >= doneIdx;
-  const open = !cancelled && !returned && reached >= 0 && reached < doneIdx;
-  const start = stages.length ? getDate(r, stages[0].col) : null;
-  const age = open && start ? (refTime - start) / HOUR : null;
-  const late = open && age != null && age > settings.sla;
-  const failed = !!(special.failed && cellText(r, special.failed));
-  const waiting = open ? stages[reached + 1]?.key || null : null;
-  const issue = cancelled ? 'cancelled' : returned ? 'returned' : failed ? 'failed' : late ? 'late' : null;
-  info = {reached, cancelled, returned, done, open, age, late, failed, waiting, issue};
-  infoCache.set(r, info);
-  return info;
-}
-
-/* ---------- إحصائيات ---------- */
-function hoursBetween(a, b){
-  const out = [];
-  orders.forEach(r => { const x = getDate(r, a), y = getDate(r, b); if(x && y && y >= x) out.push((y - x) / HOUR); });
-  return out.sort((p, q) => p - q);
-}
-function quantile(sorted, q){
-  if(!sorted.length) return null;
-  const i = (sorted.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i);
-  return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
-}
-function durationStats(a, b){
-  const s = hoursBetween(a, b);
-  return {n:s.length, median:quantile(s, .5), p90:quantile(s, .9), avg:s.length ? s.reduce((x, y) => x + y, 0) / s.length : null};
-}
-const durNote = s => s.n ? `${t('avg')} ${fmtHours(s.avg)} · P90 ${fmtHours(s.p90)}` : '';
-function bucketize(values, edges){
-  const b = Array(edges.length + 1).fill(0);
-  values.forEach(h => { let i = edges.findIndex(e => h < e); if(i < 0) i = edges.length; b[i]++; });
-  return b;
-}
-const bucketLabels = edges => edges.map((e, i) => i ? `${edges[i - 1]}–${e}` : `<${e}`).concat(`${edges.at(-1)}+`);
-
-/* ---------- اكتشاف الأعمدة ---------- */
-function detectTypes(){
-  types = {}; monthFirst = {};
-  const sample = rows.slice(0, 5000);
-  for(const h of headers){
-    const vals = sample.map(r => cellText(r, h)).filter(Boolean);
-    if(!vals.length){ types[h] = 'empty'; continue; }
-    const mf = guessMonthFirst(vals), unique = new Set(vals).size;
-    if(vals.filter(v => parseDate(v, mf)).length / vals.length > .8){ types[h] = 'date'; monthFirst[h] = mf; }
-    else if(ID_HEADER.test(h)) types[h] = 'id';
-    else if(vals.filter(v => isFinite(parseNum(v))).length / vals.length > .8)
-      types[h] = (vals.every(v => /^\d+$/.test(toLatinDigits(v))) && unique > .95 * vals.length && vals.length > 20) ? 'id' : 'num';
-    else types[h] = unique > 1 && vals.length / sample.length > .05 && (unique <= 12 || (unique <= 200 && unique <= vals.length * .2)) ? 'cat' : 'text';
-  }
-}
-function findCol(patterns, ok = () => true){
-  for(const re of patterns){ const h = headers.find(c => ok(c) && re.test(c)); if(h) return h; }
-  return null;
-}
-function detectColumns(){
-  const dateCols = headers.filter(h => types[h] === 'date'), used = new Set();
-  Object.values(settings.map).forEach(c => { if(dateCols.includes(c)) used.add(c); });
-  const pick = (key, patterns) => {
-    const manual = settings.map[key];
-    if(manual === '-') return null;
-    if(manual && dateCols.includes(manual)) return manual;
-    for(const re of patterns){ const h = dateCols.find(c => !used.has(c) && re.test(c)); if(h){ used.add(h); return h; } }
-    return null;
-  };
-  exits = EXIT_PATTERNS.map(([k, p]) => ({key:k, col:pick(k, p)})).filter(s => s.col);
-  stages = STAGE_PATTERNS.map(([k, p]) => ({key:k, col:pick(k, p)})).filter(s => s.col);
-  mainDate = stageCol('created') || stages[0]?.col || dateCols[0] || null;
-  const notDate = c => types[c] !== 'date' && types[c] !== 'empty';
-  special = {
-    id:     findCol([/^order\s*(id|number|no\.?)$/i, /^رقم\s*(الطلب|الأوردر)$/i, /order\s*(id|number)|رقم\s*الطلب/i], notDate),
-    status: findCol([/^order\s*status$/i, /^status$|^الحالة$|^حالة\s*(الطلب|الأوردر)$/i], c => types[c] === 'cat'),
-    picker: findCol([/picked\s*by|picker|التقاط\s*بواسطة/i], notDate),
-    packer: findCol([/packed\s*by|packer|تعبئة\s*بواسطة/i], notDate),
-    failed: findCol([/fail(ed|ure)?\s*reason|سبب\s*الفشل/i], notDate),
-    amount: findCol([/^order\s*amount$/i, /amount|order\s*value|قيمة|مبلغ/i], c => types[c] === 'num')
-  };
-  if(special.id){ const ids = rows.map(r => cellText(r, special.id)).filter(Boolean); hasDupIds = new Set(ids).size < ids.length; }
-  else hasDupIds = false;
-}
-
-function prepare(isNew = false){
-  dateCache = new WeakMap(); textCache = new WeakMap(); infoCache = new WeakMap();
-  detectTypes(); detectColumns();
-  refTime = 0;
-  headers.filter(h => types[h] === 'date').forEach(h => rows.forEach(r => { const d = getDate(r, h); if(d && +d > refTime) refTime = +d; }));
-  let lo = Infinity, hi = -Infinity;
-  if(mainDate) rows.forEach(r => { const d = getDate(r, mainDate); if(d){ lo = Math.min(lo, +d); hi = Math.max(hi, +d); } });
-  multiDay = hi > lo && dayKey(new Date(lo)) !== dayKey(new Date(hi));
-  weekSpan = hi - lo >= 6 * 864e5;
-  const cats = headers.filter(h => types[h] === 'cat'), nums = headers.filter(h => types[h] === 'num');
-  fillSelect('fc', cats, t('none')); fillValues();
-  fillSelect('cd', cats); fillSelect('cm', nums, t('rowcnt'));
-  if(isNew && cats.length) $('cd').value = cats.find(c => c !== special.status) || cats[0];
-  ['fw','fvw'].forEach(id => $(id).classList.toggle('hidden', !cats.length));
-  ['dw','dw2'].forEach(id => $(id).classList.toggle('hidden', !mainDate));
-  $('qvw').classList.toggle('hidden', stages.length < 2);
-}
-
-/* ---------- تحميل البيانات ---------- */
-function decodeBuffer(buf){
-  const b = new Uint8Array(buf);
-  if(b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder('utf-16le').decode(buf); // تصدير "Unicode Text"
-  if(b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder('utf-16be').decode(buf);
-  try{ return new TextDecoder('utf-8', {fatal:true}).decode(buf); }
-  catch{ return new TextDecoder('windows-1256').decode(buf); }
-}
-async function loadText(text){
-  await new Promise(r => setTimeout(r));
-  const res = Papa.parse(text.replace(/^\ufeff/, ''), {header:true, skipEmptyLines:'greedy', transformHeader:h => h.trim()});
-  const fields = (res.meta.fields || []).filter(h => h && h !== '__parsed_extra');
-  if(!res.data.length || !fields.length) throw Error(t('e_empty'));
-  headers = fields; rows = res.data; dirty = false;
-  prepare(true);
-  sortState = {col:null, dir:1};
-  $('app').classList.remove('hidden');
-  resetFilters();
-}
-async function runLoad(fn){
-  try{ await fn(); setStatus(`${t('loaded')} ${fmtNum(rows.length)} ${t('rows')}`); }
-  catch(e){ setStatus(t('err') + ': ' + e.message); }
-}
-function readFile(file){
-  if(!file) return;
-  if(/\.xlsx?$/i.test(file.name)){ setStatus(t('err') + ': ' + t('e_xlsx')); return; }
-  if(dirty && !confirm(t('lose'))) return;
-  setStatus(t('reading'));
-  const fr = new FileReader();
-  fr.onload = () => runLoad(() => loadText(decodeBuffer(fr.result)));
-  fr.onerror = () => setStatus(t('err') + ': ' + t('e_empty'));
-  fr.readAsArrayBuffer(file);
-}
-async function loadSheet(){
-  if(dirty && !confirm(t('lose'))) return;
-  await runLoad(async () => {
-    let u;
-    try{ u = new URL($('url').value.trim()); }catch{ throw Error(t('e_url')); }
-    if(u.hostname !== 'docs.google.com') throw Error(t('e_url'));
-    const gid = u.searchParams.get('gid') || (u.hash.match(/gid=(\d+)/) || [])[1] || '0';
-    const pub = u.pathname.match(/\/spreadsheets\/d\/e\/([\w-]+)/), id = u.pathname.match(/\/spreadsheets\/d\/([\w-]+)/);
-    let csvUrl;
-    if(pub) csvUrl = `https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub?output=csv&gid=${gid}`;
-    else if(id) csvUrl = `https://docs.google.com/spreadsheets/d/${id[1]}/export?format=csv&gid=${gid}`;
-    else throw Error(t('e_url'));
-    setStatus(t('reading'));
-    let res;
-    try{ res = await fetch(csvUrl); }catch{ throw Error(t('e_net')); }
-    if(!res.ok) throw Error(t('e_net'));
-    const text = await res.text();
-    if(/<html/i.test(text.slice(0, 500))) throw Error(t('e_priv'));
-    await loadText(text);
-  });
-}
-function makeSample(){
-  const head = ['ORDER ID','ORDER CREATED AT','ORDER PICKED AT','ORDER PACKED AT','ORDER SHIPPED AT','ORDER DELIVERED AT','ORDER RETURNED AT','ORDER CANCELLED AT','ORDER STATUS','SELLER NAME','DESTINATION CITY','PICKED BY','PACKED BY','ORDER AMOUNT'];
-  const sellers = ['Kaline cosmetics','Mavinwear','Dermaelle','Mood','Angels'], cities = ['Cairo','Giza','Alexandria','Sharqia','Dakahlia'];
-  const staff = ['Mohamed Ahmed','Bassem Abdelgawad','Rahma Rafat','Ahmed Khaled'], out = [head];
-  const rnd = (a, b) => a + Math.random() * (b - a), any = a => a[Math.floor(Math.random() * a.length)];
-  const fmt = d => `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-  for(let i = 0; i < 400; i++){
-    let d = new Date(2026, 8, 1 + Math.floor(rnd(0, 14)), Math.floor(rnd(8, 22)), Math.floor(rnd(0, 60)));
-    const step = h => { d = new Date(+d + h * HOUR); return fmt(d); };
-    const z = Math.random(), reached = z < .1 ? 1 : z < .2 ? 2 : z < .3 ? 3 : z < .4 ? 4 : 5;
-    const row = [48000000 + i * 37, fmt(d)];
-    row.push(reached >= 2 ? step(rnd(1, 10)) : '', reached >= 3 ? step(rnd(.3, 3)) : '', reached >= 4 ? step(rnd(.1, 6)) : '', reached >= 5 ? step(rnd(20, 90)) : '');
-    row.push(reached >= 5 && Math.random() < .08 ? step(rnd(24, 100)) : '');
-    const cancel = reached < 4 && Math.random() < .25;
-    row.push(cancel ? step(rnd(1, 30)) : '');
-    row.push(cancel ? 'CANCELLED' : ['NEW ORDER','PICKED','PACKED','SHIPPED','DELIVERED'][reached - 1]);
-    row.push(any(sellers), any(cities), reached >= 2 ? any(staff) : '', reached >= 3 ? any(staff) : '', Math.round(rnd(150, 3500)) + ' EGP');
-    out.push(row);
-  }
-  return Papa.unparse(out);
-}
-
-/* ---------- الرسومات ---------- */
-const countBy = (list, fn) => { const m = new Map(); list.forEach(r => { const k = fn(r); if(k != null) m.set(k, (m.get(k) || 0) + 1); }); return [...m].sort((a, b) => b[1] - a[1]); };
-const CHARTS = [
-  {id:'funnel', kind:'hbar', ok:() => stages.length >= 2, data(){
-    const v = stages.map(s => countWith(s.col)), base = v[0] || 1;
-    return {labels:stages.map((s, i) => `${t('s_' + s.key)} (${Math.round(v[i] / base * 100)}%)`), series:[{name:t('orders'), values:v}]};
-  }},
-  {id:'backlog', kind:'bar', ok:() => stages.length >= 2, data(){
-    const on = {}, late = {};
-    orders.forEach(r => { const i = orderInfo(r); if(!i.open || !i.waiting) return; on[i.waiting] ??= 0; late[i.waiting] ??= 0; i.late ? late[i.waiting]++ : on[i.waiting]++; });
-    const keys = stages.map(s => s.key).filter(k => k in on);
-    return {labels:keys.map(k => `${t('waiting')} ${t('s_' + k)}`), stacked:true,
-      series:[{name:t('onTime'), values:keys.map(k => on[k]), color:COLORS[0]}, {name:t('late'), values:keys.map(k => late[k]), color:COLORS[3]}]};
-  }},
-  {id:'issues', kind:'bar', ok:() => stages.length >= 2, data(){
-    const it = countBy(orders, r => { const i = orderInfo(r); return !i.issue ? null : i.issue === 'late' ? `${t('lateAt')} ${t('s_' + i.waiting)}` : t('i_' + i.issue); });
-    if(!it.length) return {labels:[t('noIssues')], series:[{name:t('orders'), values:[0]}]};
-    return {labels:it.map(x => x[0]), series:[{name:t('orders'), values:it.map(x => x[1]), color:COLORS[3]}]};
-  }},
-  {id:'status', kind:'hbar', tall:true, ok:() => !!special.status, data(){
-    const it = countBy(orders, r => cellText(r, special.status) || t('empty'));
-    return {labels:it.map(x => x[0]), series:[{name:t('orders'), values:it.map(x => x[1])}]};
-  }},
-  {id:'stage', kind:'bar', ok:() => stages.length >= 2, data(){
-    const labels = [], values = [];
-    for(let i = 1; i < stages.length; i++){
-      const m = durationStats(stages[i - 1].col, stages[i].col).median;
-      if(m == null) continue;
-      labels.push(t('s_' + stages[i - 1].key) + arrow() + t('s_' + stages[i].key));
-      values.push(+m.toFixed(2));
-    }
-    return {labels, series:[{name:t('hours'), values}]};
-  }},
-  {id:'hour', kind:'line', ok:() => !!mainDate, data(){
-    const cols = stages.length ? stages.filter(s => s.key !== 'delivered') : [{key:'orders', col:mainDate}];
-    const a = cols.map(() => Array(24).fill(0));
-    cols.forEach((c, j) => orders.forEach(r => { const d = getDate(r, c.col); if(d) a[j][d.getHours()]++; }));
-    const any = h => a.some(s => s[h]);
-    let lo = 0, hi = 23;
-    while(lo < hi && !any(lo)) lo++;
-    while(hi > lo && !any(hi)) hi--;
-    return {labels:Array.from({length:hi - lo + 1}, (_, i) => pad2(lo + i)),
-      series:cols.map((c, j) => ({name:c.key === 'orders' ? t('orders') : t('s_' + c.key), values:a[j].slice(lo, hi + 1)}))};
-  }},
-  {id:'aging', kind:'bar', ok:() => stages.length >= 2, data(){
-    const edges = [2, 4, 8, 24, 48];
-    const ages = orders.map(orderInfo).filter(i => i.open && i.age != null).map(i => i.age);
-    return {labels:bucketLabels(edges), series:[{name:t('open'), values:bucketize(ages, edges), color:COLORS[1]}]};
-  }},
-  {id:'cycle', kind:'bar', ok:() => stages.length >= 2 && !!stageCol('shipped'), data(){
-    const edges = [1, 2, 4, 8, 24];
-    return {labels:bucketLabels(edges), series:[{name:t('orders'), values:bucketize(hoursBetween(stages[0].col, stageCol('shipped')), edges)}]};
-  }},
-  {id:'staff', kind:'hbar', tall:true, ok:() => !!(special.picker || special.packer), data(){
-    const m = new Map();
-    [special.picker, special.packer].forEach((col, j) => { if(col) orders.forEach(r => { const n = cellText(r, col); if(!n) return; const a = m.get(n) || [0, 0]; a[j]++; m.set(n, a); }); });
-    const items = [...m].sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1])).slice(0, 15), series = [];
-    if(special.picker) series.push({name:t('picks'), values:items.map(x => x[1][0])});
-    if(special.packer) series.push({name:t('packs'), values:items.map(x => x[1][1]), color:COLORS[1]});
-    return {labels:items.map(x => x[0]), series, stacked:true};
-  }},
-  {id:'daily', kind:'line', ok:() => !!mainDate && multiDay, data(){
-    let cols = stages.filter(s => ['created','shipped','delivered'].includes(s.key));
-    if(!cols.length) cols = [{key:'orders', col:mainDate}];
-    const counts = new Map();
-    cols.forEach((c, j) => orders.forEach(r => {
-      const d = getDate(r, c.col); if(!d) return;
-      const k = dayKey(d), a = counts.get(k) || Array(cols.length).fill(0);
-      a[j]++; counts.set(k, a);
-    }));
-    let keys = [...counts.keys()].sort();
-    if(keys.length > 1){
-      const all = [];
-      for(let d = new Date(keys[0] + 'T00:00'), end = new Date(keys.at(-1) + 'T00:00'); d <= end && all.length <= 1500; d.setDate(d.getDate() + 1)) all.push(dayKey(d));
-      if(all.length <= 1500) keys = all;
-    }
-    const multiYear = keys.length && keys[0].slice(0, 4) !== keys.at(-1).slice(0, 4);
-    return {labels:keys.map(k => multiYear ? k : k.slice(5)),
-      series:cols.map((c, j) => ({name:t(c.key === 'orders' ? 'orders' : 's_' + c.key), values:keys.map(k => counts.get(k)?.[j] || 0)}))};
-  }},
-  {id:'wday', kind:'bar', ok:() => !!mainDate && weekSpan, data(){
-    const a = Array(7).fill(0);
-    orders.forEach(r => { const d = getDate(r, mainDate); if(d) a[d.getDay()]++; });
-    return {labels:t('days'), series:[{name:t('orders'), values:a}]};
-  }}
-];
-const CARD_IDS = [...CHARTS.map(c => c.id), 'custom', 'table'];
-
-CHARTS.forEach(c => {
-  const card = document.createElement('div'), cur = settings.type[c.id] || c.kind;
-  card.className = 'card'; card.id = 'k_' + c.id;
-  card.innerHTML = `<div class="hd"><h3 data-i="c_${c.id}"></h3><select class="ty" data-chart="${c.id}" data-a="a_type">` +
-    ['bar','hbar','line','pie'].map(x => `<option value="${x}"${x === cur ? ' selected' : ''} data-i="${x}"></option>`).join('') +
-    `</select></div><div class="ch${c.tall ? ' tall' : ''}"><canvas id="g_${c.id}"></canvas></div>`;
-  $('cards').insertBefore(card, $('k_custom'));
-});
-
-const isHidden = id => $('k_' + id).classList.contains('hidden');
-function isAvailable(id){
-  if(!rows.length) return false;
-  if(id === 'table') return true;
-  if(id === 'custom') return headers.some(h => types[h] === 'cat');
-  return CHARTS.find(c => c.id === id).ok();
-}
-function applyLayout(){
-  const o = settings.order.filter(id => CARD_IDS.includes(id));
-  CARD_IDS.forEach((id, i) => { // الأقسام الجديدة تتحط في مكانها الطبيعي
-    if(o.includes(id)) return;
-    const prev = CARD_IDS.slice(0, i).reverse().find(p => o.includes(p));
-    o.splice(prev ? o.indexOf(prev) + 1 : 0, 0, id);
-  });
-  settings.order = o;
-  o.forEach((id, i) => {
-    const el = $('k_' + id);
-    el.style.order = i;
-    el.classList.toggle('hidden', !!settings.hide[id] || !isAvailable(id));
-  });
-}
-function renderChart(id, kind, labels, series, stacked = false){
-  const pie = kind === 'pie', multi = series.length > 1, type = pie ? 'doughnut' : kind === 'hbar' ? 'bar' : kind;
-  const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
-  const stack = stacked && !pie && kind !== 'line';
-  const cfg = {
-    type,
-    data:{labels, datasets:series.map((s, j) => {
-      const c = s.color || COLORS[j % 8];
-      return {label:s.name, data:s.values, backgroundColor:pie ? COLORS : kind === 'line' ? c + '33' : c,
-        borderColor:pie ? cardColor : c, fill:kind === 'line' && !multi, tension:.3};
-    })},
-    options:{maintainAspectRatio:false, animation:{duration:250}, indexAxis:kind === 'hbar' ? 'y' : 'x',
-      plugins:{legend:{display:pie || multi, position:'bottom'}},
-      scales:pie ? {} : {x:{beginAtZero:true, stacked:stack}, y:{beginAtZero:true, stacked:stack}}}
-  };
-  const sig = type + cfg.options.indexAxis, ch = charts[id];
-  if(ch && ch.$sig === sig){ ch.data = cfg.data; ch.options = cfg.options; ch.update(); return; }
-  ch?.destroy();
-  charts[id] = new Chart($('g_' + id), cfg);
-  charts[id].$sig = sig;
-}
-function destroyCharts(){ Object.values(charts).forEach(c => c.destroy()); charts = {}; }
-function drawChart(def){
-  if(isHidden(def.id)) return;
-  const d = def.data();
-  renderChart(def.id, settings.type[def.id] || def.kind, d.labels, d.series, d.stacked);
-}
-function drawCustom(){
-  const cat = $('cd').value;
-  if(!cat || isHidden('custom')) return;
-  const num = $('cm').value, calc = $('ca').value, top = +$('cn').value, groups = new Map();
-  filtered.forEach(r => {
-    const k = cellText(r, cat) || t('empty'), g = groups.get(k) || {sum:0, n:0, rows:0};
-    g.rows++;
-    if(num){ const x = parseNum(r[num]); if(isFinite(x)){ g.sum += x; g.n++; } }
-    groups.set(k, g);
-  });
-  let items = [...groups].map(([k, g]) => [k, calc === 'count' || !num ? g.rows : calc === 'avg' ? (g.n ? g.sum / g.n : 0) : g.sum]).sort((a, b) => b[1] - a[1]);
-  if(top) items = items.slice(0, top);
-  const name = num && calc !== 'count' ? `${t(calc)} ${num}` : t('rowcnt');
-  renderChart('custom', $('ct').value, items.map(x => x[0]), [{name, values:items.map(x => +x[1].toFixed(2))}]);
-}
-function drawAllCharts(){ CHARTS.forEach(drawChart); drawCustom(); }
-
-/* ---------- الفلاتر ---------- */
-function fillSelect(id, items, firstLabel){
-  const s = $(id), prev = s.value;
-  s.replaceChildren();
-  if(firstLabel != null) s.append(new Option(firstLabel, ''));
-  items.forEach(v => s.append(new Option(v, v)));
-  if([...s.options].some(o => o.value === prev)) s.value = prev;
-}
-function fillValues(){
-  const c = $('fc').value, coll = new Intl.Collator(lang);
-  fillSelect('fv', c ? [...new Set(rows.map(r => cellText(r, c)).filter(Boolean))].sort(coll.compare) : [], t('all'));
-}
-function resetFilters(){
-  $('q').value = $('d1').value = $('d2').value = '';
-  $('fc').value = ''; $('qv').value = ''; fillValues(); applyFilters();
-}
-function applyFilters(keepPage = false){
-  const q = $('q').value.trim().toLowerCase(), from = $('d1').value, to = $('d2').value, col = $('fc').value, val = $('fv').value;
-  const view = stages.length >= 2 ? $('qv').value : '';
-  const A = from ? new Date(from + 'T00:00') : null, B = to ? new Date(to + 'T23:59:59.999') : null;
-  filtered = rows.filter(r => {
-    if(col && val && cellText(r, col) !== val) return false;
-    if(mainDate && (A || B)){ const d = getDate(r, mainDate); if(!d || (A && d < A) || (B && d > B)) return false; }
-    if(view){
-      const i = orderInfo(r);
-      if((view === 'open' && !i.open) || (view === 'late' && !i.late) || (view === 'issues' && !i.issue) ||
-         (view === 'cancelled' && !i.cancelled) || (view === 'done' && !i.done)) return false;
-    }
-    return !q || rowText(r).includes(q);
-  });
-  // لو الملف فيه أكتر من صف لنفس الأوردر (صف لكل منتج) نعدّ الأوردر مرة واحدة
-  if(hasDupIds){
-    const seen = new Set();
-    orders = filtered.filter(r => { const k = cellText(r, special.id); if(!k) return true; if(seen.has(k)) return false; seen.add(k); return true; });
-  }else orders = filtered;
-  if(!keepPage) page = 0;
+function ingest(res, name){
+  const headers = (res.meta.fields||[]).filter(h=>h!=null && String(h).trim()!=='');
+  const rows = res.data.filter(r => headers.some(h => String(r[h]??'').trim()!==''));
+  if(!rows.length){ $('loadMsg').textContent='الملف فاضي أو مافيهوش صفوف.'; return; }
+  S.headers = headers; S.rows = rows; S.page = 0;
+  detect(); derive(); setupControls();
+  $('loadMsg').textContent = `اتحمّل ${fmt(rows.length)} طلب و${headers.length} عمود من ${name}.`;
+  $('emptyState').classList.add('hidden'); $('dash').classList.remove('hidden');
   render();
 }
-function render(){
-  $('cnt').textContent = `${fmtNum(filtered.length)} ${t('of')} ${fmtNum(rows.length)} ${t('rows')}`;
-  applyLayout(); renderKpis(); drawAllCharts(); renderTable(); renderDirty();
+
+function detect(){
+  const H = S.headers, used = new Set(), cols = {};
+  const pick = (re, avoid) => H.find(h => re.test(h) && !used.has(h) && !(avoid && avoid.test(h)));
+  cols.stages = [];
+  STAGES.forEach(([k,label,re]) => {
+    const h = pick(re, k==='created' ? /sales|shipment|channel/i : null);
+    if(h){ used.add(h); cols.stages.push({k,label,h}); cols[k]=h; }
+  });
+  for(const k in OTHER){ const h = pick(OTHER[k], k==='cancelled' ? /\bby\b/i : null); if(h){ used.add(h); cols[k]=h; } }
+  if(!cols.created){ const h = H.find(h=>/created|date/i.test(h)); if(h) cols.created=h; }
+  if(!cols.id) cols.id = H[0];
+  S.cols = cols;
+  S.nonEmpty = H.filter(h => S.rows.some(r => String(r[h]??'').trim()!==''));
+  S.usable = S.nonEmpty.filter(h => {
+    const vals = new Set(); let dates=0, n=0;
+    for(const r of S.rows){ const v=String(r[h]??'').trim(); if(!v) continue; n++; vals.add(v); if(vals.size>60) return false; if(n<50 && parseDate(v) && /\d{4}/.test(v)) dates++; }
+    return vals.size>=2 && dates < Math.min(n,50)*0.5;
+  });
 }
 
-/* ---------- الأرقام الرئيسية ---------- */
-function computeKpis(){
-  const list = [], total = orders.length;
-  if(stages.length >= 2){
-    const shipped = stageCol('shipped'), shippedN = countWith(shipped);
-    list.push({key:'total', title:t('k_total'), value:fmtNum(total), color:'--ink'});
-    stages.slice(1).forEach(s => {
-      const c = countWith(s.col);
-      if(s.key === 'delivered' && shipped) list.push({key:'n_delivered', title:t('k_n_delivered'), value:fmtNum(c), color:'--grn', note:`${pct(c, shippedN)} ${t('ofShipped')}`});
-      else list.push({key:'n_' + s.key, title:t('k_n_' + s.key), value:fmtNum(c), color:s.key === 'shipped' ? '--grn' : '--tea', note:`${pct(c, total)} ${t('ofTotal')}`});
-    });
-    const ret = exitCol('returned'), can = exitCol('cancelled');
-    if(ret){ const c = countWith(ret); list.push({key:'returned', title:t('k_returned'), value:fmtNum(c), color:'--red', note:shipped ? `${pct(c, shippedN)} ${t('ofShipped')}` : `${pct(c, total)} ${t('ofTotal')}`}); }
-    if(can){ const c = countWith(can); list.push({key:'cancelled', title:t('k_cancelled'), value:fmtNum(c), color:'--amb', note:`${pct(c, total)} ${t('ofTotal')}`}); }
-    const infos = orders.map(orderInfo);
-    list.push({key:'issues', title:t('k_issues'), value:fmtNum(infos.filter(i => i.issue).length), color:'--red', note:t('issuesNote')});
-    list.push({key:'open', title:t('k_open'), value:fmtNum(infos.filter(i => i.open).length), color:'--amb', note:refTime ? `${t('asOf')} ${fmtDateTime(new Date(refTime))}` : ''});
-    // التأخير: اللي اتشحن بعد الحد + المفتوح اللي عدّى الحد
-    const first = stages[0].col, end = shipped || stages.at(-1).col;
-    let late = 0, eligible = 0;
-    orders.forEach((r, i) => {
-      const a = getDate(r, first), b = getDate(r, end);
-      if(a && b && b >= a){ eligible++; if((b - a) / HOUR > settings.sla) late++; }
-      else if(infos[i].late){ eligible++; late++; }
-    });
-    list.push({key:'sla', title:t('k_sla'), value:pct(late, eligible), color:'--red', note:`> ${settings.sla} ${t('h')} · ${t('inclOpen')}`});
-    for(let i = 1; i < stages.length; i++){
-      const a = stages[i - 1], b = stages[i], s = durationStats(a.col, b.col);
-      if(s.n) list.push({key:`d_${a.key}_${b.key}`, title:`${t('dur')} ${t('s_' + a.key)}${arrow()}${t('s_' + b.key)}`, value:fmtHours(s.median), color:'--tea', note:durNote(s)});
-    }
-    const si = stages.findIndex(s => s.key === 'shipped');
-    if(si > 1){ const s = durationStats(first, shipped); if(s.n) list.push({key:'c2s', title:t('k_c2s'), value:fmtHours(s.median), color:'--tea', note:durNote(s)}); }
-    if(special.amount){
-      const v = orders.map(r => parseNum(r[special.amount])).filter(isFinite), sum = v.reduce((a, b) => a + b, 0), unit = unitOf(special.amount);
-      list.push({key:'amount', title:t('k_amount'), value:fmtNum(sum) + (unit ? ' ' + unit : ''), color:'--grn', note:`${t('perOrder')} ${fmtNum(v.length ? sum / v.length : 0)}`});
-    }
-  }else{
-    list.push({key:'records', title:t(special.id ? 'k_total' : 'k_records'), value:fmtNum(total), color:'--ink'});
-    list.push({key:'cols', title:t('k_cols'), value:fmtNum(headers.length), color:'--tea'});
-    const nm = headers.find(h => types[h] === 'num');
-    if(nm){
-      const v = filtered.map(r => parseNum(r[nm])).filter(isFinite), s = v.reduce((a, b) => a + b, 0);
-      list.push({key:'sum', title:`${t('k_sum')} ${nm}`, value:fmtNum(s), color:'--grn'}, {key:'avg', title:`${t('k_avg')} ${nm}`, value:fmtNum(v.length ? s / v.length : 0), color:'--amb'});
-    }
+function derive(){
+  const c = S.cols; let asOf = 0;
+  const dateCols = [...c.stages.map(s=>s.h), c.returned, c.rto, c.cancelled].filter(Boolean);
+  for(const r of S.rows){
+    const d = {};
+    for(const h of dateCols){ const v = parseDate(r[h]); d[h]=v; if(v && v.getTime()>asOf) asOf=v.getTime(); }
+    r.__d = d;
+    r.__created = c.created ? (d[c.created] || parseDate(r[c.created])) : null;
+    const has = h => h && d[h];
+    const statusTxt = c.status ? String(r[c.status]||'').toLowerCase() : '';
+    let st = 'new';
+    if(has(c.cancelled) || /cancel|ملغ/.test(statusTxt)) st='cancelled';
+    else if(has(c.rto) || has(c.returned) || /return|rto|مرتجع/.test(statusTxt)) st='returned';
+    else if(has(c.delivered) || /deliver|تم التوصيل/.test(statusTxt)) st='delivered';
+    else if(has(c.shipped) || /ship|transit|out for/.test(statusTxt)) st='transit';
+    else if(['hub','picked','consolidated','packed','ready'].some(k=>has(c[k]))) st='processing';
+    r.__st = st;
   }
-  return list;
-}
-function renderKpis(){
-  const list = computeKpis();
-  kpiList = list.map(k => ({key:k.key, title:k.title}));
-  $('kp').innerHTML = list.filter(k => !settings.hideKpi[k.key]).map(k =>
-    `<div class="k" style="--c:var(${k.color})"><small>${esc(k.title)}</small><b>${esc(k.value)}</b>${k.note ? `<span class="note">${esc(k.note)}</span>` : ''}</div>`
-  ).join('');
+  S.asOf = asOf ? new Date(asOf) : new Date();
+  for(const r of S.rows) r.__ageH = r.__created ? (S.asOf - r.__created)/36e5 : null;
 }
 
-/* ---------- الجدول ---------- */
-function sortBy(i){
-  const col = headers[i];
-  sortState = sortState.col === col ? {col, dir:-sortState.dir} : {col, dir:1};
-  page = 0; renderTable();
+function setupControls(){
+  $('stF').innerHTML = '<option value="">كل الحالات</option>' + Object.entries(STATUS).map(([k,v])=>`<option value="${k}">${v.t}</option>`).join('') + '<option value="delayed">متأخر</option>';
+  const opts = S.usable.map(h=>`<option value="${esc(h)}">${esc(h)}</option>`).join('');
+  $('catF').innerHTML = '<option value="">بدون</option>' + opts;
+  $('catV').innerHTML = '<option value="">الكل</option>';
+  const pref = S.usable.find(h=>/hub|city|zone|area|governorate|محافظ|مدينة/i.test(h))
+            || S.usable.find(h=>/channel|status|courier|type/i.test(h)) || S.usable[0];
+  $('breakCol').innerHTML = S.usable.length ? opts : '<option value="">مفيش عمود مناسب</option>';
+  if(pref) $('breakCol').value = pref;
+}
+$('catF').onchange = () => {
+  const h = $('catF').value;
+  const vals = h ? [...new Set(S.rows.map(r=>String(r[h]??'').trim()).filter(Boolean))].sort() : [];
+  $('catV').innerHTML = '<option value="">الكل</option>' + vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  S.page=0; render();
+};
+['q','stF','catV','delayD'].forEach(id => $(id).addEventListener('input', ()=>{S.page=0; render();}));
+$('breakCol').onchange = () => renderBreakdown();
+$('clearBtn').onclick = () => { $('q').value=''; $('stF').value=''; $('catF').value=''; $('catF').onchange(); };
+$('prev').onclick = () => { if(S.page>0){S.page--; renderTable();} };
+$('next').onclick = () => { if((S.page+1)*PAGE < S.filtered.length){S.page++; renderTable();} };
+$('expF').onclick = () => download(S.filtered, 'orders-filtered.csv');
+$('expDelay').onclick = () => download(S.filtered.filter(isDelayed), 'orders-delayed.csv');
+
+const delayH = () => Math.max(1, +$('delayD').value || 3) * 24;
+const isOpen = r => r.__st==='new' || r.__st==='processing' || r.__st==='transit';
+const isDelayed = r => isOpen(r) && r.__ageH!=null && r.__ageH > delayH();
+
+function render(){
+  const q = $('q').value.trim().toLowerCase(), st = $('stF').value, ch = $('catF').value, cv = $('catV').value;
+  S.filtered = S.rows.filter(r => {
+    if(st==='delayed' ? !isDelayed(r) : (st && r.__st!==st)) return false;
+    if(ch && cv && String(r[ch]??'').trim()!==cv) return false;
+    if(q && !S.headers.some(h => String(r[h]??'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  $('countMsg').textContent = `${fmt(S.filtered.length)} من ${fmt(S.rows.length)} طلب · الحساب لحد آخر تحديث في الملف: ${S.asOf.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})}`;
+  renderKPIs(); renderStatus(); renderFunnel(); renderDaily(); renderBreakdown(); renderTable(); renderMap();
+}
+
+function renderKPIs(){
+  const F = S.filtered, n = F.length, c = S.cols;
+  const cnt = k => F.filter(r=>r.__st===k).length;
+  const del = cnt('delivered'), tr = cnt('transit'), pr = cnt('processing')+cnt('new'), ret = cnt('returned'), can = cnt('cancelled');
+  const delayed = F.filter(isDelayed).length;
+  const hrs = (a,b) => F.map(r => (r.__d[a] && r.__d[b]) ? (r.__d[b]-r.__d[a])/36e5 : null).filter(x=>x!=null && x>=0);
+  const toDel = c.created && c.delivered ? avg(hrs(c.created,c.delivered)) : null;
+  const toShip = c.created && c.shipped ? avg(hrs(c.created,c.shipped)) : null;
+  const ageOpen = avg(F.filter(isOpen).map(r=>r.__ageH).filter(x=>x!=null));
+  const closed = del + ret;
+  const K = [
+    {hero:1, l:'نسبة التوصيل', v:pct(del,n), s:`${fmt(del)} من ${fmt(n)} طلب اتوصّل`},
+    {l:'إجمالي الطلبات', v:fmt(n), s:'بعد الفلاتر', c:'var(--ink)'},
+    {l:'في الطريق', v:fmt(tr), s:pct(tr,n)+' من الطلبات', c:STATUS.transit.c},
+    {l:'قيد التجهيز / جديد', v:fmt(pr), s:pct(pr,n), c:STATUS.processing.c},
+    {l:'متأخر', v:fmt(delayed), s:`مفتوح أكتر من ${$('delayD').value||3} أيام`, c:'var(--bad)'},
+    {l:'مرتجع', v:fmt(ret), s:closed ? 'نسبة المرتجع '+pct(ret,closed)+' من المقفول' : '—', c:STATUS.returned.c},
+    {l:'ملغي', v:fmt(can), s:pct(can,n), c:STATUS.cancelled.c},
+    {l:'متوسط وقت التوصيل', v:dur(toDel), s:c.delivered ? 'من الإنشاء للتوصيل' : 'مفيش عمود توصيل', c:'var(--ok)'},
+    {l:'متوسط وقت الشحن', v:dur(toShip), s:c.shipped ? 'من الإنشاء للشحن' : 'مفيش عمود شحن', c:'var(--info)'},
+    {l:'عمر الطلبات المفتوحة', v:dur(ageOpen), s:'متوسط من وقت الإنشاء', c:'var(--warn)'}
+  ];
+  $('kpis').innerHTML = K.map(k=>`<div class="kpi${k.hero?' hero':''}" style="--c:${k.c||'var(--line)'}"><div class="l">${k.l}</div><div class="v">${k.v}</div><div class="s">${k.s}</div></div>`).join('');
+}
+
+function bars(el, items, total){
+  if(!items.length){ el.innerHTML = '<p class="hint">مفيش بيانات كفاية هنا.</p>'; return; }
+  const max = Math.max(...items.map(i=>i.v), 1);
+  el.innerHTML = items.map(i=>`<div class="bar"><span class="name" title="${esc(i.n)}">${esc(i.n)}</span><div class="track"><div class="fill" style="width:${(i.v/max*100).toFixed(1)}%;--c:${i.c||'var(--info)'}"></div></div><span class="num">${fmt(i.v)}${total?' · '+pct(i.v,total):''}${i.x?' · '+i.x:''}</span></div>`).join('');
+}
+function renderStatus(){
+  const F=S.filtered;
+  bars($('statusBars'), Object.entries(STATUS).map(([k,v])=>({n:v.t,v:F.filter(r=>r.__st===k).length,c:v.c})).filter(i=>i.v>0), F.length);
+}
+function renderFunnel(){
+  const F=S.filtered;
+  if(!S.cols.stages.length){ $('funnel').innerHTML='<p class="hint">مالقيتش أعمدة مراحل (زي ORDER PICKED AT).</p>'; return; }
+  bars($('funnel'), S.cols.stages.map(s=>({n:s.label, v:F.filter(r=>r.__d[s.h]).length, c:'var(--accent)'})), F.length);
+}
+function renderDaily(){
+  const el=$('daily'), m={}, md={};
+  for(const r of S.filtered){ if(!r.__created) continue; const k=dayKey(r.__created); m[k]=(m[k]||0)+1; if(r.__st==='delivered') md[k]=(md[k]||0)+1; }
+  const keys = Object.keys(m).sort().slice(-31);
+  if(!keys.length){ el.innerHTML='<p class="hint">مفيش تواريخ إنشاء مقروءة.</p>'; return; }
+  const max = Math.max(...keys.map(k=>m[k]));
+  el.innerHTML = keys.map(k=>`<div class="col" title="${k}: ${m[k]} طلب، ${md[k]||0} اتوصّل"><span class="t">${m[k]}</span><div class="b" style="height:${(m[k]/max*85).toFixed(1)}%"></div><span class="d">${k.slice(5)}</span></div>`).join('');
+}
+function renderBreakdown(){
+  const h = $('breakCol').value, el=$('breakdown');
+  if(!h){ el.innerHTML='<p class="hint">مفيش عمود فيه تصنيفات (زي مدينة أو هب) في الملف.</p>'; return; }
+  const g={};
+  for(const r of S.filtered){ const v=String(r[h]??'').trim()||'(فاضي)'; (g[v]=g[v]||{v:0,d:0}).v++; if(r.__st==='delivered') g[v].d++; }
+  const items = Object.entries(g).sort((a,b)=>b[1].v-a[1].v).slice(0,15).map(([n,o])=>({n,v:o.v,x:'توصيل '+pct(o.d,o.v)}));
+  bars(el, items, 0);
+}
+function tableCols(){
+  const c=S.cols, first=[c.id,c.created,c.shipped,c.delivered].filter(Boolean);
+  return [...new Set([...first, ...S.nonEmpty])].slice(0,14);
 }
 function renderTable(){
-  const col = sortState.col;
-  let data = filtered;
-  if(col && headers.includes(col)){
-    const isNum = types[col] === 'date' || types[col] === 'num', coll = new Intl.Collator(lang, {numeric:true});
-    const key = types[col] === 'date' ? r => +getDate(r, col) || 0
-      : types[col] === 'num' ? r => { const x = parseNum(r[col]); return isFinite(x) ? x : -Infinity; }
-      : r => cellText(r, col);
-    data = filtered.map(r => [key(r), r])
-      .sort((a, b) => (isNum ? (a[0] > b[0]) - (a[0] < b[0]) : coll.compare(a[0], b[0])) * sortState.dir)
-      .map(x => x[1]);
-  }
-  const pages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
-  page = Math.min(page, pages - 1);
-  const index = new Map(rows.map((r, i) => [r, i]));
-  const head = headers.map((h, i) => `<th data-col="${i}" tabindex="0" scope="col">${esc(h)}${col === h ? (sortState.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('');
-  const body = data.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map(r => {
-    const i = index.get(r);
-    return `<tr>${headers.map(h => `<td>${esc(r[h])}</td>`).join('')}<td class="act"><button class="s" data-act="edit" data-row="${i}">${esc(t('edit'))}</button> <button class="s" data-act="del" data-row="${i}">${esc(t('del'))}</button></td></tr>`;
-  }).join('');
-  $('tw').innerHTML = `<table><thead><tr>${head}<th class="act"></th></tr></thead><tbody>${body}</tbody></table>`;
-  $('pg').innerHTML = `<button class="s" data-page="-1"${page ? '' : ' disabled'}>${esc(t('prev'))}</button>` +
-    `<span class="mut">${esc(t('page'))} ${page + 1} / ${pages}</span>` +
-    `<button class="s" data-page="1"${page < pages - 1 ? '' : ' disabled'}>${esc(t('next'))}</button>`;
+  const cols = tableCols(), F=S.filtered, start=S.page*PAGE, page=F.slice(start,start+PAGE);
+  $('thead').innerHTML = '<tr><th>الحالة</th>'+cols.map(h=>`<th>${esc(h)}</th>`).join('')+'</tr>';
+  $('tbody').innerHTML = page.map(r=>{
+    const s=STATUS[r.__st], late=isDelayed(r);
+    return `<tr><td><span class="tag" style="--c:${s.c}">${s.t}</span>${late?' <span class="tag" style="--c:var(--bad)">متأخر</span>':''}</td>`+cols.map(h=>`<td>${esc(r[h])}</td>`).join('')+'</tr>';
+  }).join('') || `<tr><td colspan="${cols.length+1}">مفيش نتايج. غيّر الفلاتر أو امسحها.</td></tr>`;
+  const pages = Math.max(1, Math.ceil(F.length/PAGE));
+  $('pageInfo').textContent = `صفحة ${S.page+1} من ${pages}`;
+  $('prev').disabled = S.page===0; $('next').disabled = S.page+1>=pages;
 }
-function renderDirty(){ $('dirty').classList.toggle('hidden', !dirty); }
-function markDirty(){ dirty = true; renderDirty(); }
-
-/* ---------- النافذة المنبثقة ---------- */
-function openModal(html){
-  lastFocus = document.activeElement;
-  $('mc').innerHTML = html;
-  $('md').classList.remove('hidden');
-  $('mc').querySelector('input,select,button')?.focus();
+function renderMap(){
+  const c=S.cols, want=[['created','الإنشاء'],['shipped','الشحن'],['delivered','التوصيل'],['returned','المرتجع'],['rto','الرجوع للمصدر'],['cancelled','الإلغاء'],['status','الحالة']];
+  $('mapChips').innerHTML = want.map(([k,l])=>c[k]?`<span class="chip on">${l}: ${esc(c[k])}</span>`:`<span class="chip off">${l}: مش موجود</span>`).join('');
+  const emptyN = S.headers.length - S.nonEmpty.length;
+  $('emptyCols').textContent = emptyN ? `${emptyN} عمود فاضي بالكامل في الملف واتخبّى من الجدول.` : '';
 }
-function closeModal(){
-  if($('md').classList.contains('hidden')) return;
-  $('md').classList.add('hidden');
-  lastFocus?.focus?.();
-}
-function openEditor(i){
-  editIndex = i;
-  const r = i < 0 ? {} : rows[i];
-  openModal(`<h3>${esc(t(i < 0 ? 'add' : 'edit'))}</h3><div class="row">` +
-    headers.map((h, j) => `<div><label for="fld${j}">${esc(h)}</label><input id="fld${j}" data-field="${j}" value="${esc(r[h])}"></div>`).join('') +
-    `</div><div class="bar"><button data-act="save-row">${esc(t('save'))}</button><button class="s" data-act="close">${esc(t('cancel'))}</button></div>`);
-}
-function saveRow(){
-  const o = {};
-  $('mc').querySelectorAll('[data-field]').forEach(inp => { o[headers[+inp.dataset.field]] = inp.value; });
-  if(editIndex < 0) rows.push(o); else rows[editIndex] = o;
-  markDirty(); closeModal(); prepare(); applyFilters(true);
-}
-function deleteRow(i){
-  if(!confirm(t('sure'))) return;
-  rows.splice(i, 1);
-  markDirty(); prepare(); applyFilters(true);
-}
-function openPanel(){
-  applyLayout();
-  const dateCols = headers.filter(h => types[h] === 'date');
-  let h = `<h3>${esc(t('custom'))}</h3>
-    <label for="p_title">${esc(t('name'))}</label><input id="p_title" data-act="title" value="${esc(settings.title)}">
-    <label for="p_sla" style="margin-top:8px">${esc(t('sla'))}</label><input id="p_sla" type="number" min="0.5" step="0.5" data-act="sla" value="${settings.sla}">`;
-  if(dateCols.length){
-    h += `<h4 style="margin-top:12px">${esc(t('map'))}</h4><div class="row">` +
-      [...STAGE_PATTERNS, ...EXIT_PATTERNS].map(([k]) => {
-        const cur = settings.map[k] || '', found = stageCol(k) || exitCol(k);
-        return `<div><label for="m_${k}">${esc(t('s_' + k))}</label><select id="m_${k}" data-act="map" data-key="${k}">` +
-          `<option value="">${esc(t('auto'))}${!cur && found ? ' (' + esc(found) + ')' : ''}</option>` +
-          `<option value="-"${cur === '-' ? ' selected' : ''}>${esc(t('missing'))}</option>` +
-          dateCols.map(c => `<option value="${esc(c)}"${cur === c ? ' selected' : ''}>${esc(c)}</option>`).join('') + `</select></div>`;
-      }).join('') + '</div>';
-  }
-  h += `<h4 style="margin-top:12px">${esc(t('cards'))}</h4>` + settings.order.map((id, i) =>
-    `<div class="li"><label class="ck"><input type="checkbox" data-act="toggle-card" data-id="${id}"${settings.hide[id] ? '' : ' checked'}> ${esc(t('c_' + id))}</label>` +
-    `<span><button class="s" data-act="move" data-idx="${i}" data-d="-1" aria-label="${esc(t('a_up'))}">▲</button> <button class="s" data-act="move" data-idx="${i}" data-d="1" aria-label="${esc(t('a_down'))}">▼</button></span></div>`
-  ).join('');
-  if(kpiList.length) h += `<h4 style="margin-top:12px">${esc(t('kpis'))}</h4>` + kpiList.map(k =>
-    `<label class="ck"><input type="checkbox" data-act="toggle-kpi" data-id="${esc(k.key)}"${settings.hideKpi[k.key] ? '' : ' checked'}> ${esc(k.title)}</label>`).join('');
-  h += `<div class="bar"><button class="s" data-act="reset-settings">${esc(t('reset'))}</button><button data-act="close">${esc(t('done'))}</button></div>`;
-  openModal(h);
-}
-function moveCard(i, d){
-  const o = settings.order, j = i + d;
-  if(j < 0 || j >= o.length) return;
-  [o[i], o[j]] = [o[j], o[i]];
-  saveSettings(); applyLayout(); if(rows.length) drawAllCharts(); openPanel();
-}
-function resetSettings(){ try{ localStorage.removeItem('dp'); }catch{} location.reload(); }
-
-/* ---------- التصدير ---------- */
-function exportCsv(all){
-  const data = all ? rows : filtered;
-  const csv = '\ufeff' + Papa.unparse({fields:headers, data:data.map(r => headers.map(h => r[h] ?? ''))});
+function download(rows, name){
+  const csv = Papa.unparse(rows.map(r=>{const o={'الحالة':STATUS[r.__st].t}; S.headers.forEach(h=>o[h]=r[h]); return o;}));
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-  a.download = `${all ? 'all-data' : 'filtered-data'}-${dayKey(new Date())}.csv`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  if(all){ dirty = false; renderDirty(); }
+  a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
 }
 
-/* ---------- الشكل واللغة ---------- */
-function applyTitle(){ $('h1').textContent = settings.title; document.title = settings.title; }
-function applyTheme(mode){
-  const root = document.documentElement;
-  root.dataset.theme = mode;
-  const cs = getComputedStyle(root);
-  Chart.defaults.color = cs.getPropertyValue('--mut').trim();
-  Chart.defaults.borderColor = cs.getPropertyValue('--line').trim();
-  $('btnTheme').textContent = mode === 'dark' ? '☀' : '🌙';
-}
-function applyLang(){
-  const root = document.documentElement;
-  root.lang = lang; root.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.querySelectorAll('[data-i]').forEach(e => { e.textContent = t(e.dataset.i); });
-  document.querySelectorAll('[data-p]').forEach(e => { e.placeholder = t(e.dataset.p); });
-  document.querySelectorAll('[data-a]').forEach(e => e.setAttribute('aria-label', t(e.dataset.a)));
-  [['fc','none'],['fv','all'],['cm','rowcnt']].forEach(([id, k]) => { const o = $(id).options[0]; if(o && o.value === '') o.textContent = t(k); });
-  $('btnLang').textContent = lang === 'ar' ? 'EN' : 'ع';
-  applyTitle();
-}
-
-/* ---------- ربط الأحداث ---------- */
-$('btnPanel').addEventListener('click', openPanel);
-$('btnTheme').addEventListener('click', () => {
-  settings.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  saveSettings(); applyTheme(settings.theme); destroyCharts(); if(rows.length) drawAllCharts();
-});
-$('btnLang').addEventListener('click', () => {
-  lang = lang === 'ar' ? 'en' : 'ar'; settings.lang = lang; saveSettings();
-  closeModal(); applyLang(); destroyCharts(); if(rows.length) render();
-});
-$('btnSheet').addEventListener('click', loadSheet);
-$('btnSample').addEventListener('click', () => { if(dirty && !confirm(t('lose'))) return; runLoad(() => loadText(makeSample())); });
-$('btnClear').addEventListener('click', resetFilters);
-$('btnAdd').addEventListener('click', () => openEditor(-1));
-$('btnExp').addEventListener('click', () => exportCsv(false));
-$('btnExpAll').addEventListener('click', () => exportCsv(true));
-$('btnPrint').addEventListener('click', () => window.print());
-
-$('file').addEventListener('change', e => { readFile(e.target.files[0]); e.target.value = ''; });
-const drop = document.querySelector('.drop');
-drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
-drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); });
-
-let searchTimer;
-$('q').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => applyFilters(), 250); });
-['d1','d2','fv','qv'].forEach(id => $(id).addEventListener('change', () => applyFilters()));
-$('fc').addEventListener('change', () => { fillValues(); applyFilters(); });
-['cd','cm','ca','ct','cn'].forEach(id => $(id).addEventListener('change', drawCustom));
-
-$('cards').addEventListener('change', e => {
-  const id = e.target.dataset.chart; if(!id) return;
-  settings.type[id] = e.target.value; saveSettings();
-  drawChart(CHARTS.find(c => c.id === id));
-});
-$('tw').addEventListener('click', e => {
-  const th = e.target.closest('th[data-col]');
-  if(th){ sortBy(+th.dataset.col); return; }
-  const b = e.target.closest('button[data-act]'); if(!b) return;
-  const i = +b.dataset.row;
-  if(b.dataset.act === 'edit') openEditor(i); else deleteRow(i);
-});
-$('tw').addEventListener('keydown', e => {
-  const th = e.target.closest('th[data-col]');
-  if(th && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); sortBy(+th.dataset.col); }
-});
-$('pg').addEventListener('click', e => {
-  const b = e.target.closest('[data-page]'); if(!b || b.disabled) return;
-  page += +b.dataset.page; renderTable();
-});
-
-const mc = $('mc');
-mc.addEventListener('click', e => {
-  const b = e.target.closest('button[data-act]'); if(!b) return;
-  switch(b.dataset.act){
-    case 'save-row': saveRow(); break;
-    case 'close': closeModal(); break;
-    case 'move': moveCard(+b.dataset.idx, +b.dataset.d); break;
-    case 'reset-settings': resetSettings(); break;
+function sample(){
+  const H=['ORDER ID','ORDER REFERENCE','ORDER CREATED AT','HUB ASSIGNED AT','ORDER PICKED AT','ORDER PACKED AT','READY TO SHIP AT','ORDER SHIPPED AT','ORDER DELIVERED AT','ORDER RETURNED AT','ORDER CANCELLED AT','CANCELLED BY','CITY','HUB'];
+  const cities=['القاهرة','الجيزة','الإسكندرية','المنصورة','طنطا','أسيوط'], hubs=['Hub Nasr City','Hub Dokki','Hub Smouha','Hub Delta'];
+  const f=d=>d.getFullYear()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  const base=new Date(2026,8,1).getTime(), data=[];
+  for(let i=0;i<400;i++){
+    const t0=base+Math.random()*12*864e5, r={}; let t=t0;
+    H.forEach(h=>r[h]='');
+    r['ORDER ID']=String(10000000+Math.floor(Math.random()*9e7)); r['ORDER CREATED AT']=f(new Date(t0));
+    r.CITY=cities[i%cities.length]; r.HUB=hubs[i%hubs.length];
+    const fate=Math.random();
+    if(fate<.06){ r['ORDER CANCELLED AT']=f(new Date(t0+36e5*3)); r['CANCELLED BY']='Customer'; data.push(r); continue; }
+    const steps=['HUB ASSIGNED AT','ORDER PICKED AT','ORDER PACKED AT','READY TO SHIP AT','ORDER SHIPPED AT'];
+    const reach = fate<.2 ? Math.floor(Math.random()*5) : 5;
+    for(let s=0;s<reach;s++){ t+=36e5*(1+Math.random()*8); r[steps[s]]=f(new Date(t)); }
+    if(reach===5 && fate>.3){ t+=36e5*(12+Math.random()*60); if(fate>.9) r['ORDER RETURNED AT']=f(new Date(t)); else r['ORDER DELIVERED AT']=f(new Date(t)); }
+    data.push(r);
   }
-});
-mc.addEventListener('input', e => {
-  if(e.target.dataset.act === 'title'){ settings.title = e.target.value; saveSettings(); applyTitle(); }
-});
-mc.addEventListener('change', e => {
-  const el = e.target, act = el.dataset.act;
-  if(act === 'sla'){ settings.sla = Math.max(.5, +el.value || 24); saveSettings(); infoCache = new WeakMap(); if(rows.length) applyFilters(true); }
-  else if(act === 'toggle-card'){ settings.hide[el.dataset.id] = !el.checked; saveSettings(); applyLayout(); if(rows.length) drawAllCharts(); }
-  else if(act === 'toggle-kpi'){ settings.hideKpi[el.dataset.id] = !el.checked; saveSettings(); renderKpis(); }
-  else if(act === 'map'){
-    const k = el.dataset.key;
-    if(el.value) settings.map[k] = el.value; else delete settings.map[k];
-    saveSettings();
-    if(rows.length){ prepare(); applyFilters(true); }
-    openPanel();
-  }
-});
-mc.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.dataset.field != null) saveRow(); });
-$('md').addEventListener('click', e => { if(e.target.id === 'md') closeModal(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
-window.addEventListener('beforeunload', e => { if(dirty){ e.preventDefault(); e.returnValue = ''; } });
-
-/* ---------- البداية ---------- */
-Chart.defaults.font.family = "'Segoe UI',Tahoma,sans-serif";
-applyTheme(settings.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-applyLang();
+  return {data, meta:{fields:H}};
+}
+})();
 </script>
 </body>
 </html>
